@@ -9,8 +9,11 @@ ENV_FILE = BASE_DIR / ".env"
 
 DB_URI = None
 
-# 1. Try to read from .env file first
-if ENV_FILE.exists():
+# 1. Prioritize OS environment variables first (critical for Docker/Render deployments!)
+DB_URI = os.environ.get("SUPABASE_URL")
+
+# 2. Try to read from local .env file next
+if not DB_URI and ENV_FILE.exists():
     with open(ENV_FILE, "r") as f:
         for line in f:
             cleaned_line = line.strip()
