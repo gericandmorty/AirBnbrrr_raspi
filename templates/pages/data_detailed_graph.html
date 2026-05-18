@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Data Analysis - AirBnBrrr</title>
+
+    <!-- Import Inter Font for that clean crypto-dashboard look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #0f1419;
+            --text-muted: #536471;
+            --cg-green: #8dc647;
+            --border-color: #eff3f4;
+            --pill-bg: #f7f9fa;
+            --pill-hover: #eff3f4;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        #metrics-wrapper {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .top-metric-block {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .top-metric-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .top-metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-main);
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .metric-change {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--cg-green);
+        }
+
+        .metric-change.negative {
+            color: #f5365c;
+        }
+
+        .add-metric-wrapper select {
+            appearance: none;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 32px 8px 12px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            cursor: pointer;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23536471%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 10px auto;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .add-metric-wrapper select:hover {
+            border-color: #cbd5e1;
+        }
+
+        #active-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .metric-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        .metric-pill .remove {
+            cursor: pointer;
+            color: #94a3b8;
+            font-size: 16px;
+            line-height: 1;
+            margin-left: 2px;
+            transition: color 0.2s;
+        }
+
+        .metric-pill .remove:hover {
+            color: #f5365c;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 16px;
+        }
+
+        #ranges {
+            display: flex;
+            background: var(--pill-bg);
+            border-radius: 8px;
+            padding: 4px;
+            gap: 2px;
+        }
+
+        .range-btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .range-btn:hover {
+            color: var(--text-main);
+        }
+
+        .range-btn.active {
+            background: white;
+            color: var(--text-main);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        #custom-range {
+            display: none;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        input[type=datetime-local] {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg);
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--cg-green);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        /* Scrollable Chart Wrapper */
+        .chart-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .chart-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .chart-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 10px;
+        }
+
+        .chart-wrapper::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .chart-wrapper::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        .chart-container {
+            height: 380px;
+            position: relative;
+            min-width: 100%;
+        }
+
+        canvas#chart {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+        #no-data {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 40px 0;
+            display: none;
+        }
+
+        @media (max-width: 599px) {
+            .header-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .add-metric-wrapper {
+                justify-content: flex-end;
+            }
+
+            .controls-row {
+                justify-content: flex-start;
+                overflow-x: auto;
+                padding-bottom: 8px;
+            }
+
+            .chart-container {
+                height: 280px;
+            }
+
+            #custom-range {
+                flex-wrap: wrap;
+                justify-content: flex-start;
+            }
+        }
+    </style>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Luxon -->
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+    <!-- Chart.js Luxon Adapter -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
+</head>
+
+<body>
+
+  <!-- INCLUDE navigation.html -->
+
+  <!-- Layout Wrapper with Left Sidebar Offset -->
+  <div class="lg:pl-64 pt-16 lg:pt-0">
+    <div class="container">
+        <div class="header-controls">
+            <div id="metrics-wrapper">
+                <!-- Dynamically injected metric blocks -->
+            </div>
+
+            <div class="add-metric-wrapper">
+                <select id="columnSelect">
+                    <option value="" disabled selected>+ Add Metric</option>
+                </select>
+                <button id="refresh" class="btn-primary" style="display:none;">Refresh</button>
+            </div>
+        </div>
+
+        <div id="active-pills">
+            <!-- Dynamically injected metric pills -->
+        </div>
+
+        <div class="card">
+            <div class="controls-row">
+                <div id="ranges">
+                    <!-- Range buttons inserted by JS -->
+                </div>
+            </div>
+
+            <div id="custom-range">
+                <input type="datetime-local" id="customStart">
+                <span style="color:var(--text-muted); font-size: 13px;">to</span>
+                <input type="datetime-local" id="customEnd">
+                <button id="applyCustom" class="btn-primary">Apply</button>
+            </div>
+
+            <div class="chart-wrapper" id="chartWrapper">
+                <div class="chart-container" id="chartContainer">
+                    <canvas id="chart"></canvas>
+                </div>
+            </div>
+            <div id="no-data">No data available for the selected range.</div>
+        </div>
+    </div>
+
+    <script>
+        const columns = [
+            'dust_sensor', 'dht_temp', 'dht_humidity', 'vibration',
+            'ds18b20_temp1', 'ds18b20_temp2', 'pzem_voltage', 'pzem_current',
+            'pzem_power', 'pzem_energy', 'pzem_frequency', 'pzem_power_factor'
+        ];
+
+        const metricConfig = {
+            dust_sensor: { label: 'Air Quality (Dust)' },
+            dht_temp: { label: 'AC Output Temp' },
+            dht_humidity: { label: 'AC Output Humidity' },
+            vibration: { label: 'Compressor Vibration' },
+            ds18b20_temp1: { label: 'Compressor Discharge Line Temp' },
+            ds18b20_temp2: { label: 'Compressor Suction Line Temp' },
+            pzem_voltage: { label: 'Voltage' },
+            pzem_current: { label: 'Current' },
+            pzem_power: { label: 'Active Power' },
+            pzem_energy: { label: 'Total Energy' },
+            pzem_frequency: { label: 'Frequency' },
+            pzem_power_factor: { label: 'Power Factor' }
+        };
+
+        // Distinct colors for multiple metrics
+        const colorPalette = [
+            '#8dc647', // CG Green
+            '#3b82f6', // Blue
+            '#f43f5e', // Rose
+            '#f59e0b', // Amber
+            '#8b5cf6', // Violet
+            '#14b8a6', // Teal
+            '#ec4899', // Pink
+            '#64748b'  // Slate
+        ];
+
+        const rangeOptions = [
+            ['today', 'Today'],
+            ['yesterday', 'Last Day'],
+            ['last7', '7D'],
+            ['last28', '28D'],
+            ['thisMonth', 'This Month'],
+            ['lastMonth', 'Last Month'],
+            ['custom', 'Custom']
+        ];
+
+        // Parse URL params for multiple columns
+        const urlParams = new URLSearchParams(location.search);
+        const initialColumnsParam = urlParams.get('columns');
+
+        let activeColumns = [];
+        if (initialColumnsParam) {
+            activeColumns = initialColumnsParam.split(',').filter(c => columns.includes(c));
+        }
+        if (activeColumns.length === 0) {
+            activeColumns = ['dust_sensor']; // Default fallback
+        }
+
+        const defaultRange = 'today';
+        let activeRange = defaultRange;
+
+        const columnSelect = document.getElementById('columnSelect');
+        const rangesEl = document.getElementById('ranges');
+        const customRangeEl = document.getElementById('custom-range');
+        const customStart = document.getElementById('customStart');
+        const customEnd = document.getElementById('customEnd');
+
+        // Helper to format names (e.g., 'dust_sensor' -> 'Dust Sensor')
+        function formatLabel(str) {
+            return str.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function getMetricLabel(key) {
+            return metricConfig[key]?.label || formatLabel(key);
+        }
+
+        // Render Dropdown and Pills
+        function renderControls() {
+            // Rebuild dropdown (excluding active columns)
+            columnSelect.innerHTML = '<option value="" disabled selected>+ Add Metric</option>';
+            columns.forEach(c => {
+                if (!activeColumns.includes(c)) {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    opt.textContent = getMetricLabel(c);
+                    columnSelect.appendChild(opt);
+                }
+            });
+
+            // Rebuild pills
+            const pillsEl = document.getElementById('active-pills');
+            pillsEl.innerHTML = '';
+            activeColumns.forEach((c, index) => {
+                const color = colorPalette[index % colorPalette.length];
+                const pill = document.createElement('div');
+                pill.className = 'metric-pill';
+                pill.innerHTML = `
+                    <span style="color: ${color}; font-size: 16px;">●</span> 
+                    ${getMetricLabel(c)}
+                    <span class="remove" data-col="${c}">&times;</span>
+                `;
+                pillsEl.appendChild(pill);
+            });
+
+            // Bind remove events
+            document.querySelectorAll('.metric-pill .remove').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const col = e.target.getAttribute('data-col');
+                    if (activeColumns.length > 1) {
+                        activeColumns = activeColumns.filter(c => c !== col);
+                        updateUrlAndFetch();
+                    } else {
+                        // Keep at least one metric to prevent empty state
+                        alert("You must have at least one metric selected.");
+                    }
+                });
+            });
+        }
+
+        // Dropdown Add Event
+        columnSelect.addEventListener('change', (e) => {
+            const selected = e.target.value;
+            if (selected && !activeColumns.includes(selected)) {
+                activeColumns.push(selected);
+                updateUrlAndFetch();
+            }
+        });
+
+        function updateUrlAndFetch() {
+            const p = new URLSearchParams(location.search);
+            p.set('columns', activeColumns.join(','));
+            history.replaceState(null, '', location.pathname + '?' + p.toString());
+            renderControls();
+            fetchAndRender();
+        }
+
+        // Build Range Buttons
+        for (const [val, label] of rangeOptions) {
+            const btn = document.createElement('button');
+            btn.className = 'range-btn';
+            btn.dataset.val = val;
+            btn.textContent = label;
+            btn.addEventListener('click', () => { setRange(val); });
+            rangesEl.appendChild(btn);
+        }
+
+        function setRange(val) {
+            activeRange = val;
+            document.querySelectorAll('.range-btn').forEach(b => b.classList.toggle('active', b.dataset.val === val));
+            customRangeEl.style.display = (val === 'custom') ? 'flex' : 'none';
+            fetchAndRender();
+        }
+
+        function computeRangeStartEnd(range) {
+            const now = new Date();
+            function isoNoTZ(d) { return d.toISOString().slice(0, 19); }
+
+            if (range === 'custom') return {
+                start: customStart.value ? isoNoTZ(new Date(customStart.value)) : null,
+                end: customEnd.value ? isoNoTZ(new Date(customEnd.value)) : null
+            };
+
+            let start = null;
+            let end = now;
+
+            if (range === 'today') {
+                start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+            } else if (range === 'yesterday') {
+                start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0);
+                end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59);
+            } else if (range === 'last7') {
+                start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            } else if (range === 'last28') {
+                start = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+            } else if (range === 'thisMonth') {
+                start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+            } else if (range === 'lastMonth') {
+                const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+                const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1000);
+                start = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1, 0, 0, 0);
+                end = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), lastOfLastMonth.getDate(), 23, 59, 59);
+            }
+
+            return { start: start ? isoNoTZ(start) : null, end: end ? isoNoTZ(end) : null };
+        }
+
+        // --- CoinGecko Style Chart Setup ---
+        const ctx = document.getElementById('chart').getContext('2d');
+
+        function getGradient(context, chartArea, colorHex) {
+            // Convert hex to rgb for rgba manipulation
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(colorHex);
+            if (!result) return 'transparent';
+            const r = parseInt(result[1], 16);
+            const g = parseInt(result[2], 16);
+            const b = parseInt(result[3], 16);
+
+            const gradient = context.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+            gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.3)`);
+            gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.0)`);
+
+            return gradient;
+        }
+
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: { datasets: [] }, // Dynamically injected
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false, // Ensures multiple lines show in tooltip cleanly
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 20, 25, 0.9)',
+                        titleFont: { family: 'Inter', size: 12, weight: 'normal' },
+                        bodyFont: { family: 'Inter', size: 14, weight: 'bold' },
+                        padding: 12,
+                        cornerRadius: 8,
+                        usePointStyle: true,
+                        boxPadding: 6,
+                        callbacks: {
+                            label: function (context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 2 });
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'timeseries',
+                        time: {
+                            tooltipFormat: 'MMM d, yyyy, h:mm a',
+                            displayFormats: {
+                                millisecond: 'MMM d',
+                                second: 'MMM d',
+                                minute: 'MMM d',
+                                hour: 'MMM d',
+                                day: 'MMM d',
+                                week: 'MMM d',
+                                month: 'MMM yyyy',
+                                quarter: 'MMM yyyy',
+                                year: 'yyyy'
+                            }
+                        },
+                        grid: { display: false, drawBorder: false },
+                        border: { display: false },
+                        ticks: {
+                            font: { family: 'Inter', size: 11 },
+                            color: '#536471',
+                            maxRotation: 0,
+                            autoSkip: true
+                        },
+                        adapters: { date: { zone: 'Asia/Manila' } }
+                    },
+                    y: {
+                        position: 'right',
+                        beginAtZero: false,
+                        grid: {
+                            color: '#eff3f4',
+                            drawBorder: false,
+                            tickLength: 0
+                        },
+                        border: { display: false },
+                        ticks: {
+                            font: { family: 'Inter', size: 11 },
+                            color: '#536471',
+                            padding: 8
+                        }
+                    }
+                }
+            }
+        });
+
+        // Update the top UI blocks for each active metric
+        function updateMetrics(datasetsData) {
+            const wrapper = document.getElementById('metrics-wrapper');
+            wrapper.innerHTML = ''; // clear old
+
+            activeColumns.forEach((col, index) => {
+                const points = datasetsData[col] || [];
+
+                // Do not display the metric block if there is no data
+                if (points.length === 0) return;
+
+                const color = colorPalette[index % colorPalette.length];
+
+                // Assuming data is sorted by time
+                const current = points[points.length - 1].y;
+                const first = points[0].y;
+
+                const currentStr = current.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+                const diff = current - first;
+                let pct = first !== 0 ? (diff / first) * 100 : 0;
+
+                let pctHtml = "";
+                if (diff >= 0) {
+                    pctHtml = `<span class="metric-change">+${pct.toFixed(2)}%</span>`;
+                } else {
+                    pctHtml = `<span class="metric-change negative">${pct.toFixed(2)}%</span>`;
+                }
+
+                const block = document.createElement('div');
+                block.className = 'top-metric-block';
+                block.innerHTML = `
+                    <div class="top-metric-label">
+                        <span style="color: ${color}; font-size: 16px;">●</span> ${getMetricLabel(col)}
+                    </div>
+                    <div class="top-metric-value">
+                        ${currentStr} ${pctHtml}
+                    </div>
+                `;
+                wrapper.appendChild(block);
+            });
+        }
+
+        function generateMockData(start, end, columnName) {
+            let points = [];
+            let currentVal = columnName.includes('temp') ? 24 : (columnName.includes('voltage') ? 220 : 1000);
+            let now = end ? new Date(end) : new Date();
+            let startTime = start ? new Date(start) : new Date(now.getTime() - 24 * 3600000);
+
+            let timeStep = (now.getTime() - startTime.getTime()) / 500;
+            if (timeStep < 60000) timeStep = 60000;
+
+            for (let t = startTime.getTime(); t <= now.getTime(); t += timeStep) {
+                currentVal += (Math.random() - 0.48) * (currentVal * 0.05);
+                let ts = new Date(t + 8 * 60 * 60 * 1000); // 8 hours added
+                points.push({ x: ts.getTime(), y: Math.max(0, currentVal) }); // Use x/y format for timeseries
+            }
+            return points;
+        }
+
+        async function fetchAndRender() {
+            const { start, end } = computeRangeStartEnd(activeRange);
+            let datasetsData = {}; // Object to hold data by column name
+            let maxPointsInDataset = 0;
+            let totalPoints = 0;
+
+            try {
+                // Fetch all columns concurrently
+                const fetchPromises = activeColumns.map(async (column) => {
+                    let url = '/telemetry/column?column=' + encodeURIComponent(column);
+                    if (start) url += '&start=' + encodeURIComponent(start);
+                    if (end) url += '&end=' + encodeURIComponent(end);
+
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('Network error');
+                    const rows = await res.json();
+
+                    let points = [];
+                    for (const r of rows) {
+                        let ts = null;
+                        try {
+                            if (typeof r.timestamp === 'string') {
+                                const t1 = r.timestamp.replace(' ', 'T');
+                                ts = new Date(t1);
+                                if (isNaN(ts)) ts = new Date(t1 + 'Z');
+                            }
+                        } catch (e) { ts = null; }
+
+                        const v = r[column];
+                        if (v === null || v === undefined) continue;
+                        const num = Number(v);
+                        if (!isFinite(num) || !ts || isNaN(ts)) continue;
+
+                        // Add 8 hours
+                        ts = new Date(ts.getTime() + 8 * 60 * 60 * 1000);
+
+                        // Structure as {x, y} for multi-dataset time scales
+                        points.push({ x: ts.getTime(), y: num });
+                    }
+
+                    // Sort individually just in case
+                    points.sort((a, b) => a.x - b.x);
+                    return { column, points };
+                });
+
+                const results = await Promise.all(fetchPromises);
+                results.forEach(res => {
+                    datasetsData[res.column] = res.points;
+                    totalPoints += res.points.length;
+                    if (res.points.length > maxPointsInDataset) {
+                        maxPointsInDataset = res.points.length;
+                    }
+                });
+
+                // If no real data at all, throw to trigger fallback
+                if (totalPoints === 0) throw new Error("No real data found");
+
+            } catch (err) {
+                console.log("Using mock data since backend is unavailable or empty.");
+                activeColumns.forEach(col => {
+                    const mockPts = generateMockData(start, end, col);
+                    datasetsData[col] = mockPts;
+                    if (mockPts.length > maxPointsInDataset) {
+                        maxPointsInDataset = mockPts.length;
+                    }
+                    totalPoints += mockPts.length;
+                });
+            }
+
+            if (totalPoints === 0) {
+                document.getElementById('no-data').style.display = 'block';
+                document.getElementById('chartWrapper').style.display = 'none';
+                chart.data.datasets = [];
+                chart.update();
+                updateMetrics({});
+                return;
+            }
+
+            document.getElementById('no-data').style.display = 'none';
+            document.getElementById('chartWrapper').style.display = 'block';
+
+            // Update Top Metrics
+            updateMetrics(datasetsData);
+
+            // --- Dynamic Width Logic for Scrolling ---
+            const chartContainer = document.getElementById('chartContainer');
+            const chartWrapper = document.getElementById('chartWrapper');
+
+            // Width depends on the dataset with the most points
+            const minPixelsPerPoint = 4;
+            const maxSafeWidth = 32000;
+
+            let calculatedWidth = maxPointsInDataset * minPixelsPerPoint;
+            calculatedWidth = Math.min(calculatedWidth, maxSafeWidth);
+
+            const finalWidth = Math.max(chartWrapper.clientWidth, calculatedWidth);
+            chartContainer.style.width = finalWidth + 'px';
+
+            chart.options.scales.x.ticks.maxTicksLimit = Math.max(8, Math.floor(finalWidth / 80));
+
+            // Adapt timescale format based on the first dataset that actually has data
+            let samplePoints = [];
+            for (const col of activeColumns) {
+                if (datasetsData[col] && datasetsData[col].length > 0) {
+                    samplePoints = datasetsData[col];
+                    break;
+                }
+            }
+
+            if (samplePoints.length > 0) {
+                const timeSpanMs = samplePoints[samplePoints.length - 1].x - samplePoints[0].x;
+                const isTimeRange = ['today', 'yesterday'].includes(activeRange) ||
+                    (activeRange === 'custom' && timeSpanMs <= 48 * 60 * 60 * 1000);
+
+                if (isTimeRange) {
+                    delete chart.options.scales.x.time.unit;
+                } else {
+                    chart.options.scales.x.time.unit = 'day';
+                }
+            }
+
+            // Create datasets (filtering out those with no data)
+            chart.data.datasets = activeColumns.reduce((acc, col, index) => {
+                const points = datasetsData[col] || [];
+
+                // Skip rendering this line entirely if there are no data points
+                if (points.length === 0) return acc;
+
+                const color = colorPalette[index % colorPalette.length];
+
+                // Only use fill gradient if it's the only line on the screen to prevent messiness
+                const isSingleColumn = activeColumns.length === 1;
+
+                acc.push({
+                    label: getMetricLabel(col),
+                    data: points, // Uses {x, y} format
+                    borderColor: color,
+                    borderWidth: 2,
+                    fill: isSingleColumn,
+                    backgroundColor: isSingleColumn ? function (context) {
+                        const chart = context.chart;
+                        const { ctx, chartArea } = chart;
+                        if (!chartArea) return null;
+                        return getGradient(ctx, chartArea, color);
+                    } : 'transparent',
+                    tension: 0.1,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: color,
+                    pointHoverBorderWidth: 2,
+                    pointHitRadius: 10
+                });
+
+                return acc;
+            }, []);
+
+            chart.update();
+
+            // Auto-scroll to latest
+            chartWrapper.scrollLeft = chartWrapper.scrollWidth;
+        }
+
+        document.getElementById('refresh').addEventListener('click', fetchAndRender);
+        document.getElementById('applyCustom').addEventListener('click', () => { setRange('custom'); });
+
+        // Initialize App
+        renderControls();
+        setRange(defaultRange);
+    </script>
+  </div>
+</body>
+
+</html>

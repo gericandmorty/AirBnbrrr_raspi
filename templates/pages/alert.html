@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alert Details</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f6fbf8',
+              100: '#e8f5ed',
+              500: '#22c55e',
+              600: '#16a34a',
+              900: '#062b12',
+            },
+            accent: '#bb2233'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for a cleaner look */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body class="bg-brand-50 text-slate-800 font-sans min-h-screen">
+
+  <!-- INCLUDE navigation.html -->
+
+  <!-- Layout Wrapper with Left Sidebar Offset -->
+  <div class="lg:pl-64 pt-16 lg:pt-0">
+
+  <!-- Main Content -->
+  <main class="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
+    
+    <!-- Page Header -->
+    <header class="mb-6 sm:mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-brand-900 tracking-tight">Alert Details</h1>
+        <p id="meta" class="text-sm sm:text-base text-slate-500 mt-1 font-medium">Loading alert metadata...</p>
+      </div>
+    </header>
+
+    <!-- Summary Card -->
+    <section class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 mb-6 transition-all">
+      <h2 class="text-lg font-semibold text-slate-800 mb-2 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        Summary
+      </h2>
+      <p id="summary" class="text-slate-600 leading-relaxed">Loading summary...</p>
+    </section>
+
+    <!-- Diagnoses Section -->
+    <section class="mb-8">
+      <h3 class="text-xl font-bold text-brand-900 mb-4 tracking-tight">Diagnostic Analysis</h3>
+      
+      <!-- Container for dynamic diagnosis cards -->
+      <div id="diagnoses-container" class="space-y-4">
+        <!-- Skeleton Loading State -->
+        <div class="animate-pulse flex space-x-4 bg-white p-6 rounded-2xl border border-slate-200">
+          <div class="flex-1 space-y-4 py-1">
+            <div class="h-4 bg-slate-200 rounded w-3/4"></div>
+            <div class="space-y-2">
+              <div class="h-4 bg-slate-200 rounded"></div>
+              <div class="h-4 bg-slate-200 rounded w-5/6"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row items-center gap-3 mt-8 pt-6 border-t border-slate-200">
+      <a href="/pages/alerts" class="w-full sm:w-auto text-center px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors focus:ring-2 focus:ring-slate-400 focus:outline-none">
+        &larr; Back to Alerts
+      </a>
+      <button id="delete-btn" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 font-medium transition-colors border border-red-200 focus:ring-2 focus:ring-red-400 focus:outline-none">
+        Delete Alert
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Custom Confirmation Modal -->
+  <div id="delete-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" id="modal-backdrop"></div>
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative z-10 fade-in transform transition-all scale-100">
+      <div class="flex items-center gap-4 mb-4">
+        <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">Delete this alert?</h3>
+          <p class="text-sm text-slate-500 mt-1">This action cannot be undone. The alert data will be permanently removed.</p>
+        </div>
+      </div>
+      <div class="flex flex-col sm:flex-row justify-end gap-3 mt-6">
+        <button id="cancel-delete" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors">
+          Cancel
+        </button>
+        <button id="confirm-delete" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors shadow-sm">
+          Yes, Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Example data fallback for previewing without a backend
+    const mockData = {
+      id: "ALT-84920",
+      timestamp: new Date().toISOString(),
+      summary: "Abnormal power consumption and lack of cooling detected on Window AC Unit #4.",
+      diagnoses: "{\n  \"diagnoses\": [\n    {\n      \"issue\": \"Compressor Failure to Start or Control Board Malfunction\",\n      \"status\": \"Current\",\n      \"confidence_score\": 98,\n      \"root_cause\": \"Power consumption is only 66.4W, well below the expected 545–600W range. Current draw is 0.287A, indicating only the fan or control circuit is running. Suction and discharge line temperatures are nearly equal (35.4°C and 36.3°C), confirming the refrigeration cycle is not active. Compressor vibration is 0.0g, indicating no mechanical operation.\",\n      \"severity\": \"High\",\n      \"recommended_action\": \"Inspect the compressor contactor, start capacitor, and thermostat signal. Verify if the compressor receives a start signal. Test the start capacitor for capacitance and ESR. If capacitor is good, check control board output and compressor windings for continuity and insulation resistance.\"\n    },\n    {\n      \"issue\": \"Stuck or Malfunctioning Thermostat Setting\",\n      \"status\": \"Current\",\n      \"confidence_score\": 90,\n      \"root_cause\": \"Thermostat is set to 10°C, which is abnormally low for a room air conditioner and likely below the cooling threshold. However, despite this setting, the compressor is not running, which suggests either a thermostat calibration error, incorrect mode setting (e.g., fan-only), or a communication fault between thermostat and compressor control.\",\n      \"severity\": \"Medium\",\n      \"recommended_action\": \"Verify thermostat operation by adjusting to a more typical setpoint (e.g., 22–24°C). Check if the unit attempts to cool. If no response, inspect thermostat wiring and control board inputs. Consider recalibration or replacement if faulty.\"\n    },\n    {\n      \"issue\": \"Potential Start Capacitor Degradation (Predicted Failure)\",\n      \"status\": \"Predicted\",\n      \"confidence_score\": 75,\n      \"root_cause\": \"Low power draw and lack of compressor start despite correct voltage and thermostat call suggest a weak or failed start capacitor. Although not confirmed without physical testing, this is a common failure mode in non-inverter window units with manual start circuits.\",\n      \"severity\": \"Medium\",\n      \"recommended_action\": \"Test the start capacitor with a multimeter or ESR meter. Replace if capacitance is outside ±10% of rated value or if bulging/leaking is observed. Proactively replace if unit is over 3 years old and no prior maintenance.\"\n    },\n    {\n      \"issue\": \"Low Risk of Airflow Restriction or Refrigerant Issues (Currently Normal)\",\n      \"status\": \"Current\",\n      \"confidence_score\": 85,\n      \"root_cause\": \"Dust level is 0.0, indicating a clean filter. Suction line temperature is not abnormally low (not near freezing), and discharge temperature is within normal range, suggesting no refrigerant overcharge or blockage at this time.\",\n      \"severity\": \"Low\",\n      \"recommended_action\": \"Continue monitoring dust levels. Schedule filter inspection every 3 months even if sensor reads low, as sensor may fail silently.\"\n    }\n  ]\n}"
+    };
+
+    function getQueryParam(name) {
+      const u = new URL(window.location.href);
+      return u.searchParams.get(name);
+    }
+
+    // Modal Logic
+    const modal = document.getElementById('delete-modal');
+    const deleteBtn = document.getElementById('delete-btn');
+    const cancelBtn = document.getElementById('cancel-delete');
+    const confirmBtn = document.getElementById('confirm-delete');
+    const backdrop = document.getElementById('modal-backdrop');
+
+    const toggleModal = (show) => {
+      if (show) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    };
+
+    deleteBtn.addEventListener('click', () => toggleModal(true));
+    cancelBtn.addEventListener('click', () => toggleModal(false));
+    backdrop.addEventListener('click', () => toggleModal(false));
+
+    // Formatter for Severity styling
+    const getSeverityStyles = (severity) => {
+      const s = severity.toLowerCase();
+      if (s === 'high' || s === 'critical') return 'bg-red-50 border-red-200 text-red-800 ring-red-100';
+      if (s === 'medium' || s === 'warning') return 'bg-amber-50 border-amber-200 text-amber-800 ring-amber-100';
+      if (s === 'low' || s === 'info') return 'bg-emerald-50 border-emerald-200 text-emerald-800 ring-emerald-100';
+      return 'bg-slate-50 border-slate-200 text-slate-800 ring-slate-100';
+    };
+
+    const getSeverityBadge = (severity) => {
+      const s = severity.toLowerCase();
+      if (s === 'high' || s === 'critical') return 'bg-red-500 text-white';
+      if (s === 'medium' || s === 'warning') return 'bg-amber-500 text-white';
+      if (s === 'low' || s === 'info') return 'bg-emerald-500 text-white';
+      return 'bg-slate-500 text-white';
+    }
+
+    // Render parsed diagnoses
+    function renderDiagnoses(diagnosesString) {
+      const container = document.getElementById('diagnoses-container');
+      container.innerHTML = ''; // clear skeleton
+      
+      try {
+        // Handle potentially double-stringified JSON or direct object
+        let parsedData = typeof diagnosesString === 'string' ? JSON.parse(diagnosesString) : diagnosesString;
+        
+        // Sometimes the string itself contains a stringified JSON object inside
+        if (typeof parsedData === 'string') {
+           parsedData = JSON.parse(parsedData);
+        }
+
+        const diagnosesList = parsedData.diagnoses || [];
+
+        if (diagnosesList.length === 0) {
+          container.innerHTML = '<div class="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center text-slate-500">No diagnostic information available.</div>';
+          return;
+        }
+
+        diagnosesList.forEach((diag, index) => {
+          const cardStyles = getSeverityStyles(diag.severity);
+          const badgeStyles = getSeverityBadge(diag.severity);
+          
+          const cardHTML = `
+            <div class="rounded-2xl p-5 sm:p-6 border shadow-sm transition-all duration-200 hover:shadow-md ${cardStyles} fade-in" style="animation-delay: ${index * 0.05}s">
+              <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${badgeStyles}">
+                      ${diag.severity} Severity
+                    </span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/60 text-slate-700 border border-slate-200 shadow-sm backdrop-blur-sm">
+                      Score: ${diag.confidence_score}%
+                    </span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${diag.status.toLowerCase() === 'current' ? 'text-blue-700 bg-blue-100/80 border-blue-200' : 'text-purple-700 bg-purple-100/80 border-purple-200'} border">
+                      ${diag.status}
+                    </span>
+                  </div>
+                  <h4 class="text-lg font-bold leading-tight mt-2">${diag.issue}</h4>
+                </div>
+              </div>
+              
+              <div class="space-y-4 mt-4 bg-white/40 p-4 rounded-xl border border-white/60">
+                <div>
+                  <h5 class="text-xs font-bold uppercase tracking-wider opacity-70 mb-1">Root Cause Analysis</h5>
+                  <p class="text-sm sm:text-base leading-relaxed opacity-90">${diag.root_cause}</p>
+                </div>
+                <div class="pt-4 border-t border-slate-200/50">
+                  <h5 class="text-xs font-bold uppercase tracking-wider opacity-70 mb-1 flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    Recommended Action
+                  </h5>
+                  <p class="text-sm sm:text-base leading-relaxed font-medium opacity-90">${diag.recommended_action}</p>
+                </div>
+              </div>
+            </div>
+          `;
+          container.insertAdjacentHTML('beforeend', cardHTML);
+        });
+
+      } catch (err) {
+        console.error("Failed to parse diagnoses:", err);
+        // Fallback to raw preformatted text if JSON parsing fails
+        container.innerHTML = `
+          <div class="p-4 bg-red-50 border border-red-200 rounded-xl mb-4 text-red-700 text-sm">Failed to parse diagnostic data visually. Raw data below:</div>
+          <pre class="bg-slate-800 text-slate-100 p-4 sm:p-6 rounded-2xl overflow-x-auto text-xs sm:text-sm font-mono shadow-inner">${typeof diagnosesString === 'string' ? diagnosesString.replace(/</g, '&lt;').replace(/>/g, '&gt;') : JSON.stringify(diagnosesString, null, 2)}</pre>
+        `;
+      }
+    }
+
+    async function loadAlert() {
+      const id = getQueryParam('id');
+      let alertData;
+
+      try {
+        if (!id) throw new Error('Missing ID');
+        
+        const res = await fetch(`/alerts/${id}`);
+        if (!res.ok) throw new Error('Alert not found');
+        
+        alertData = await res.json();
+      } catch (err) {
+        console.warn("API fetch failed, utilizing mock data for preview rendering.");
+        // Fallback to mock data so the UI can be previewed without a real backend
+        alertData = mockData;
+        if(id) alertData.id = id;
+      }
+
+      // Format timestamp
+      const dateObj = new Date(alertData.timestamp);
+      const formattedDate = isNaN(dateObj) ? alertData.timestamp : dateObj.toLocaleString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric', 
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+
+      document.getElementById('meta').innerText = `ID: ${alertData.id} • ${formattedDate}`;
+      document.getElementById('summary').innerText = alertData.summary || 'No summary provided.';
+      
+      renderDiagnoses(alertData.diagnoses);
+
+      // Handle custom modal delete confirmation
+      confirmBtn.onclick = async () => {
+        confirmBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Deleting...';
+        confirmBtn.disabled = true;
+        
+        try {
+          // If the actual fetch fails, we'll still redirect to simulate success in preview mode
+          await fetch(`/alerts/${alertData.id}`, { method: 'DELETE' });
+        } catch(e) {
+          console.log("Delete mocked.");
+        } finally {
+          window.location.href = '/pages/alerts';
+        }
+      };
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', loadAlert);
+  </script>
+  </div>
+</body>
+</html>

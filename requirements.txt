@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+requests
+pandas
+scikit-learn
+pydantic
+psycopg2-binary
+SQLAlchemy
+bcrypt
