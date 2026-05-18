@@ -30,7 +30,10 @@ class AnomalyDetectorService:
         self._is_trained = False
 
         # Automatically train the model upon instantiation
-        self.train()
+        try:
+            self.train()
+        except Exception as e:
+            logging.error(f"Initial model training failed on startup: {e}. Will attempt to train lazily on demand.")
 
     def train(self):
         """
@@ -86,7 +89,12 @@ class AnomalyDetectorService:
             bool: True if the data is an anomaly, False if it is normal.
         """
         if not self._is_trained:
-            raise RuntimeError("The model has not been trained yet. Call train() first.")
+            try:
+                logging.info("Model not trained yet. Attempting lazy training now...")
+                self.train()
+            except Exception as e:
+                logging.error(f"Lazy model training failed: {e}. Falling back to safe default (no anomaly).")
+                return False
 
         # Convert the incoming dictionary to a single-row DataFrame
         # Ensure we only use the columns the model expects, in the exact order
