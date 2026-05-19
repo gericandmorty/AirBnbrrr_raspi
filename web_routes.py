@@ -13,7 +13,7 @@ def _read_template(filename: str) -> str:
     p = TEMPLATES_DIR / filename
     if not p.exists():
         raise HTTPException(status_code=404, detail="Page not found")
-    content = p.read_text()
+    content = p.read_text(encoding="utf-8")
 
     # Simple recursive parser to resolve <!-- INCLUDE filename.html --> comments
     def resolve_includes(text: str) -> str:
@@ -22,7 +22,7 @@ def _read_template(filename: str) -> str:
             inc_file = match.group(1)
             inc_path = TEMPLATES_DIR / inc_file
             if inc_path.exists():
-                return resolve_includes(inc_path.read_text())
+                return resolve_includes(inc_path.read_text(encoding="utf-8"))
             return f"<!-- Include error: {inc_file} not found -->"
         return re.sub(pattern, replace, text)
 
