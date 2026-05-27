@@ -7,7 +7,7 @@ router = APIRouter()
 
 class ContactIn(BaseModel):
     name: str = Field(..., min_length=1)
-    ph_number: str = Field(..., pattern=r"^\d{11}$")
+    ph_number: str = Field(..., pattern=r"^\d{10,15}$")
     enable: Optional[bool] = True
 
 class ContactOut(BaseModel):
@@ -42,7 +42,7 @@ def create_contact(payload: ContactIn):
     cur = conn.cursor()
     cur.execute(
         "INSERT INTO contacts (name, ph_number, enable) VALUES (%s, %s, %s) RETURNING id",
-        (payload.name, payload.ph_number, payload.enable),
+        (payload.name, payload.ph_number, int(payload.enable)),
     )
     contact_id = cur.fetchone()["id"]
     conn.commit()
@@ -59,7 +59,7 @@ def update_contact(contact_id: int, payload: ContactIn):
         raise HTTPException(status_code=404, detail="Contact not found")
     cur.execute(
         "UPDATE contacts SET name = %s, ph_number = %s, enable = %s WHERE id = %s",
-        (payload.name, payload.ph_number, payload.enable, contact_id),
+        (payload.name, payload.ph_number, int(payload.enable), contact_id),
     )
     conn.commit()
     conn.close()
@@ -74,7 +74,7 @@ def patch_enable(contact_id: int, enable: bool):
     if not row:
         conn.close()
         raise HTTPException(status_code=404, detail="Contact not found")
-    cur.execute("UPDATE contacts SET enable = %s WHERE id = %s", (enable, contact_id))
+    cur.execute("UPDATE contacts SET enable = %s WHERE id = %s", (int(enable), contact_id))
     conn.commit()
     conn.close()
     return ContactOut(id=row["id"], name=row["name"], ph_number=row["ph_number"], enable=enable)

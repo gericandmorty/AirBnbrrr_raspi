@@ -2,6 +2,7 @@ import json
 from services.ai_predictor import ask
 from services.traccar_sms import send_sms
 from services.alerts_api import create_alert, AlertIn
+from services.rule_engine import analyze_with_rules
 
 def format_for_sms(api_response_string):
     """
@@ -109,12 +110,35 @@ Based on the AC specifications and the sensor context provided, what are the cur
 # ==========================================
 def process_anomaly(anomaly_data):
     """
-    Process the detected anomaly, format the keys for readability, 
-    and prepare the single combined prompt for the AI API.
+    Process the detected anomaly using a two-layer analysis:
+
+    LAYER 1 — Rule Engine (deterministic, physics-based)
+      Runs FIRST and ALWAYS. Checks each sensor against hard-coded
+      thresholds derived from the AC unit specifications. Produces
+      a structured list of findings with severity, root cause,
+      and a step-by-step computation audit trail.
+
+    LAYER 2 — AI / LLM (contextual, probabilistic)
+      Runs SECOND if the rule engine confirms something is anomalous
+      OR if the Isolation Forest flagged it. Provides deeper context
+      and predicted future failures. May be unavailable (API down).
+
+    Both results are stored together in the alert's `diagnoses` field
+    as a combined JSON: { "rule_diagnoses": {...}, "ai_diagnoses": {...} }
     """
     print("Processing raw anomaly data...")
 
-    # Map raw keys to human-readable keys for better AI understanding
+    # ── LAYER 1: Rule Engine ───────────────────────────────────
+    # Pass the raw numeric data directly to the rule engine
+    # (it uses the same keys as the telemetry payload)
+    raw_sensor_data = dict(anomaly_data)  # preserve original for rule engine
+    rule_result = analyze_with_rules(raw_sensor_data)
+
+    print("\n--- RULE ENGINE RESULT ---")
+    print(json.dumps(rule_result, indent=2))
+    print("--------------------------\n")
+
+    # ── Build human-readable keys for AI prompt ────────────────
     clean_data = {
         "Dust Level": anomaly_data.pop("dust_sensor", None),
         "Return Air Temperature (C)": anomaly_data.pop("dht_temp", None),
@@ -125,66 +149,77 @@ def process_anomaly(anomaly_data):
         "Voltage (V)": anomaly_data.pop("pzem_voltage", None),
         "Current (A)": anomaly_data.pop("pzem_current", None),
         "Power (W)": anomaly_data.pop("pzem_power", None),
-        "Energy (kWh)": anomaly_data.pop("pzem_energy", None),  
+        "Energy (kWh)": anomaly_data.pop("pzem_energy", None),
         "Frequency (Hz)": anomaly_data.pop("pzem_frequency", None),
         "Power Factor": anomaly_data.pop("pzem_power_factor", None),
         "AC Status": ac_status_to_str(anomaly_data.pop("ac_status", None)),
         "AC Thermostat": anomaly_data.pop("ac_thermostat", None)
     }
-    
-    # Remove any keys that weren't present in the original payload to keep the prompt clean
     clean_data = {k: v for k, v in clean_data.items() if v is not None}
 
-    # Generate the single combined prompt text
+    # Generate the combined AI prompt
     combined_prompt_text = generate_combined_prompt(clean_data)
-    
+
     print("\n--- PROMPT READY FOR API ---")
     print(combined_prompt_text)
     print("----------------------------\n")
-    
+
+    # ── LAYER 2: AI Diagnosis ──────────────────────────────────
+    ai_diagnoses_payload = None
     try:
         api_response = ask(combined_prompt_text)
+        print("\n--- AI RESPONSE ---")
+        print(api_response)
+        print("-------------------\n")
+
+        # Parse AI response to validate it is proper JSON
+        try:
+            ai_parsed = json.loads(api_response) if isinstance(api_response, str) else api_response
+            ai_diagnoses_payload = ai_parsed
+        except json.JSONDecodeError:
+            ai_diagnoses_payload = {"raw": api_response}
+
     except Exception as e:
         err_text = str(e)
-        fail_sms_message = (
-            "AI prediction failed. Possible API limit reached. "
-            "Please switch to another API in AI Setup. "
-            f"Error: {err_text[:200]}"
-        )
+        print(f"\n--- AI PREDICTION ERROR ---\n{err_text}\n---------------------------\n")
+        ai_diagnoses_payload = {"error": err_text, "note": "AI layer unavailable; rule engine findings are still valid."}
 
-        print("\n--- AI PREDICTION ERROR ---")
-        print(fail_sms_message)
-        print("---------------------------\n")
+    # ── Combine both layers into one diagnoses payload ─────────
+    combined_diagnoses = json.dumps({
+        "rule_diagnoses": rule_result,
+        "ai_diagnoses":   ai_diagnoses_payload,
+    })
 
-        alert = create_alert(
-            AlertIn(
-                summary=fail_sms_message,
-                diagnoses=json.dumps({"error": err_text})
-            )
-        )
+    # ── Build SMS from rule engine findings (reliable fallback) ─
+    if rule_result["findings"]:
+        sms_source = json.dumps({"diagnoses": [
+            {
+                "issue":              f["issue"],
+                "severity":           f["severity"],
+                "recommended_action": f["recommended_action"],
+            }
+            for f in rule_result["findings"]
+        ]})
+        sms_message = "[RULE ENGINE] " + format_for_sms(sms_source)
+    elif ai_diagnoses_payload and "diagnoses" in (ai_diagnoses_payload or {}):
+        sms_message = "[AI] " + format_for_sms(json.dumps(ai_diagnoses_payload))
+    else:
+        sms_message = "⚠️ Anomaly detected. Rule engine found no specific rule violations. Check AI layer for details."
 
-        fail_sms_message += "\n\nhttp://airbnbrrr.local:8000/alerts/" + str(alert.id)
-        send_sms(fail_sms_message)
-        return
-
-    print("\n--- AI RESPONSE ---")
-    print(api_response)
-    print("-------------------\n")
-    
-    
-    # Prepare SMS using original API response string when available
-    sms_source = api_response if isinstance(api_response, str) else json.dumps(response_data)
-    sms_message = format_for_sms(sms_source)
     print("\n--- FORMATTED SMS ---")
     print(sms_message)
     print("---------------------\n")
 
+    # ── Persist the alert ──────────────────────────────────────
     alert_in = AlertIn(
         summary=sms_message,
-        diagnoses=api_response if isinstance(api_response, str) else json.dumps(api_response)
+        diagnoses=combined_diagnoses,
     )
-    
     alert = create_alert(alert_in)
-    
-    sms_message += "\n\nhttp://airbnbrrr.local:8000/alerts/" + str(alert.id)
-    send_sms(sms_message)
+
+    # ── Send SMS (non-critical — alert is already saved above) ─
+    try:
+        sms_message += "\n\nhttp://airbnbrrr.local:8000/pages/alert?id=" + str(alert.id)
+        send_sms(sms_message)
+    except Exception as sms_err:
+        print(f"\n--- SMS SEND FAILED (alert still saved) ---\n{sms_err}\n-------------------------------------------\n")

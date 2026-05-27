@@ -416,11 +416,23 @@
                     const phone = document.querySelector(`input[data-id-phone="${id}"]`).value;
                     const payload = { name, ph_number: phone };
 
-                    await fetch(`/contacts/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const saveRes = await fetch(`/contacts/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
                     btn.innerHTML = originalHTML;
                     lucide.createIcons({ root: btn });
-                    showToast('Changes saved successfully');
+
+                    if (saveRes.ok) {
+                        showToast('Changes saved successfully');
+                    } else {
+                        let errMsg = 'Failed to save changes.';
+                        try {
+                            const err = await saveRes.json();
+                            if (err.detail) errMsg = Array.isArray(err.detail)
+                                ? err.detail.map(d => d.msg).join(', ')
+                                : err.detail;
+                        } catch(_) {}
+                        showToast(errMsg, 'error');
+                    }
                 };
             });
 
@@ -445,16 +457,30 @@
             const name = document.getElementById('name').value.trim();
             const ph = document.getElementById('ph_number').value.trim();
 
-            await fetch('/contacts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, ph_number: ph }) });
-
-            document.getElementById('name').value = '';
-            document.getElementById('ph_number').value = '';
+            const res = await fetch('/contacts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, ph_number: ph })
+            });
 
             btn.innerHTML = originalHTML;
             lucide.createIcons({ root: btn });
 
-            showToast('New contact added');
-            fetchContacts();
+            if (res.ok) {
+                document.getElementById('name').value = '';
+                document.getElementById('ph_number').value = '';
+                showToast('New contact added');
+                fetchContacts();
+            } else {
+                let errMsg = 'Failed to add contact.';
+                try {
+                    const err = await res.json();
+                    if (err.detail) errMsg = Array.isArray(err.detail)
+                        ? err.detail.map(d => d.msg).join(', ')
+                        : err.detail;
+                } catch(_) {}
+                showToast(errMsg, 'error');
+            }
         };
 
         // Initial Load

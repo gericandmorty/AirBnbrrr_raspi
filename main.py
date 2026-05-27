@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel
 from typing import Optional
@@ -122,7 +122,7 @@ def read_root(request: Request):
 
 
 @app.post("/telemetry", status_code=201)
-def receive_telemetry(payload: Telemetry):
+def receive_telemetry(payload: Telemetry, background_tasks: BackgroundTasks):
 	# Use AC setup values from the ac_setup table (single source of truth)
 	ac_values = get_ac_setup()
 	ac_status = ac_values.get("ac_status", "Not Set")
@@ -166,11 +166,16 @@ def receive_telemetry(payload: Telemetry):
 	payload_dict.pop("ac_status", None)
 	payload_dict.pop("ac_thermostat", None)
 	is_anom = service.is_anomaly(payload_dict)
-	# print(f"\nPrediction result: Is anomaly? {is_anom}")
 	if is_anom:
 		payload_dict["ac_status"] = ac_status
 		payload_dict["ac_thermostat"] = ac_thermostat
-		process_anomaly(payload_dict)
+		# Run in background so Pi gets instant 201 — AI + SMS happen after response
+		def _safe_process(data):
+			try:
+				process_anomaly(data)
+			except Exception as e:
+				print(f"\n[ERROR] process_anomaly failed: {e}\n")
+		background_tasks.add_task(_safe_process, payload_dict)
 
 	return {"id": row_id, "status": "stored"}
 
