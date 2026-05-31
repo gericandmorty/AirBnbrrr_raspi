@@ -16,7 +16,7 @@ def _get_enabled_numbers() -> List[str]:
     cur.execute("SELECT ph_number FROM contacts WHERE enable = 1")
     rows = cur.fetchall()
     conn.close()
-    return [r[0] for r in rows]
+    return [r["ph_number"] for r in rows]
 
 def send_sms(text: str = "TEST MESSAGE") -> Dict:
     """Send `text` to all enabled contact numbers via Traccar SMS endpoint.

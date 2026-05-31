@@ -130,80 +130,94 @@ def trigger_alert_action(data):
 	global alert_timer
 	with timer_lock:
 		alert_timer = None
-	print(f"\n[DEBOUNCER] 2-minute delay completed. Processing anomaly alert...")
+	print(f"\n[DEBOUNCER] 2-minute delay completed. Processing anomaly alert...", flush=True)
 	try:
 		process_anomaly(data)
 	except Exception as e:
-		print(f"\n[ERROR] process_anomaly failed: {e}\n")
+		print(f"\n[ERROR] process_anomaly failed: {e}\n", flush=True)
+
+
+def process_telemetry_background(payload_dict: dict):
+	global alert_timer
+	try:
+		# Use AC setup values from the ac_setup table (single source of truth)
+		ac_values = get_ac_setup()
+		ac_status = ac_values.get("ac_status", "Not Set")
+		ac_thermostat = ac_values.get("ac_thermostat", "Not Set")
+
+		conn = get_db_connection()
+		cur = conn.cursor()
+		cur.execute(
+			"""
+			INSERT INTO telemetry (
+				dust_sensor, dht_temp, dht_humidity, vibration,
+				ds18b20_temp1, ds18b20_temp2,
+				pzem_voltage, pzem_current, pzem_power, pzem_energy,
+				pzem_frequency, pzem_power_factor,
+				ac_status, ac_thermostat
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			RETURNING id
+			""",
+			(
+				payload_dict.get("dust_sensor"),
+				payload_dict.get("dht_temp"),
+				payload_dict.get("dht_humidity"),
+				payload_dict.get("vibration"),
+				payload_dict.get("ds18b20_temp1"),
+				payload_dict.get("ds18b20_temp2"),
+				payload_dict.get("pzem_voltage"),
+				payload_dict.get("pzem_current"),
+				payload_dict.get("pzem_power"),
+				payload_dict.get("pzem_energy"),
+				payload_dict.get("pzem_frequency"),
+				payload_dict.get("pzem_power_factor"),
+				ac_status,
+				ac_thermostat,
+			),
+		)
+		row_id = cur.fetchone()['id']
+		conn.commit()
+		conn.close()
+		print(f"\n[BACKGROUND] Telemetry successfully stored with ID {row_id}", flush=True)
+	except Exception as db_err:
+		print(f"\n[ERROR] Failed to save telemetry in background: {db_err}", flush=True)
+		return
+
+	# Perform anomaly detection on a copy of the telemetry payload
+	model_data = dict(payload_dict)
+	model_data.pop("ac_status", None)
+	model_data.pop("ac_thermostat", None)
+
+	try:
+		is_anom = service.is_anomaly(model_data)
+		if is_anom:
+			payload_dict["ac_status"] = ac_status
+			payload_dict["ac_thermostat"] = ac_thermostat
+			
+			# Handle debouncing with threading.Timer
+			with timer_lock:
+				if alert_timer is None:
+					print(f"\n[DEBOUNCER] Anomaly detected! Starting {ALERT_DELAY_SECONDS}s alert delay...", flush=True)
+					alert_timer = threading.Timer(ALERT_DELAY_SECONDS, trigger_alert_action, [payload_dict])
+					alert_timer.start()
+				else:
+					print("\n[DEBOUNCER] Anomaly detected, but alert timer is already running. Keeping original schedule.", flush=True)
+		else:
+			# If system is normal, cancel any pending alert timer
+			with timer_lock:
+				if alert_timer is not None:
+					print("\n[DEBOUNCER] Telemetry is normal. Canceling pending anomaly alert!", flush=True)
+					alert_timer.cancel()
+					alert_timer = None
+	except Exception as ml_err:
+		print(f"\n[ERROR] Anomaly detection failed in background: {ml_err}", flush=True)
 
 
 @app.post("/telemetry", status_code=201)
 def receive_telemetry(payload: Telemetry, background_tasks: BackgroundTasks):
-	global alert_timer
-	# Use AC setup values from the ac_setup table (single source of truth)
-	ac_values = get_ac_setup()
-	ac_status = ac_values.get("ac_status", "Not Set")
-	ac_thermostat = ac_values.get("ac_thermostat", "Not Set")
-
-	conn = get_db_connection()
-	cur = conn.cursor()
-	cur.execute(
-		"""
-		INSERT INTO telemetry (
-			dust_sensor, dht_temp, dht_humidity, vibration,
-			ds18b20_temp1, ds18b20_temp2,
-			pzem_voltage, pzem_current, pzem_power, pzem_energy,
-			pzem_frequency, pzem_power_factor,
-			ac_status, ac_thermostat
-		) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-		RETURNING id
-		""",
-		(
-			payload.dust_sensor,
-			payload.dht_temp,
-			payload.dht_humidity,
-			payload.vibration,
-			payload.ds18b20_temp1,
-			payload.ds18b20_temp2,
-			payload.pzem_voltage,
-			payload.pzem_current,
-			payload.pzem_power,
-			payload.pzem_energy,
-			payload.pzem_frequency,
-			payload.pzem_power_factor,
-			ac_status,
-			ac_thermostat,
-		),
-	)
-	row_id = cur.fetchone()['id']
-	conn.commit()
-	conn.close()
- 
 	payload_dict = payload.dict()
-	payload_dict.pop("ac_status", None)
-	payload_dict.pop("ac_thermostat", None)
-	is_anom = service.is_anomaly(payload_dict)
-	if is_anom:
-		payload_dict["ac_status"] = ac_status
-		payload_dict["ac_thermostat"] = ac_thermostat
-		
-		# Handle debouncing with threading.Timer
-		with timer_lock:
-			if alert_timer is None:
-				print("\n[DEBOUNCER] Anomaly detected! Starting 2-minute alert delay...")
-				alert_timer = threading.Timer(ALERT_DELAY_SECONDS, trigger_alert_action, [payload_dict])
-				alert_timer.start()
-			else:
-				print("\n[DEBOUNCER] Anomaly detected, but alert timer is already running. Keeping original schedule.")
-	else:
-		# If system is normal, cancel any pending alert timer
-		with timer_lock:
-			if alert_timer is not None:
-				print("\n[DEBOUNCER] Telemetry is normal. Canceling pending anomaly alert!")
-				alert_timer.cancel()
-				alert_timer = None
-
-	return {"id": row_id, "status": "stored"}
+	background_tasks.add_task(process_telemetry_background, payload_dict)
+	return {"status": "stored"}
 
 
 @app.get("/telemetry")
