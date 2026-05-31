@@ -122,7 +122,7 @@ def read_root(request: Request):
 
 
 # Anomaly alert debouncer state
-ALERT_DELAY_SECONDS = 8.0
+ALERT_DELAY_SECONDS = float(os.environ.get("ALERT_DELAY_SECONDS", "120.0"))
 alert_timer = None
 timer_lock = threading.Lock()
 
