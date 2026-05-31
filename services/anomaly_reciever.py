@@ -219,7 +219,8 @@ def process_anomaly(anomaly_data):
 
     # ── Send SMS (non-critical — alert is already saved above) ─
     try:
-        sms_message += "\n\nhttp://airbnbrrr.local:8000/pages/alert?id=" + str(alert.id)
+        # Note: Do not append the HTTP URL because carriers block SMS messages containing links.
+        sms_message += "\nReport ID: " + str(alert.id)
         send_sms(sms_message)
     except Exception as sms_err:
         print(f"\n--- SMS SEND FAILED (alert still saved) ---\n{sms_err}\n-------------------------------------------\n")

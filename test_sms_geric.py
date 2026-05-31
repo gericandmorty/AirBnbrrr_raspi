@@ -4,29 +4,13 @@ import requests
 from services.traccar_setup_api import get_traccar_setup
 
 # Only send to Geric for this simulation
-GERIC_NUMBER = "09157513981"
+GERIC_NUMBER = "09510412754"
 
 cfg = get_traccar_setup()
 sms_url = cfg["sms_url"]
 api_key  = cfg["api_key"]
 
-message = (
-    "[RULE ENGINE] !! AC Diagnostic Alert !!\n"
-    "\n"
-    "[HIGH] Power Usage -- TOO HIGH\n"
-    "Reading: 651.2 W  |  Safe range: 545-600 W\n"
-    "Action: Clean the condenser coil and inspect the run capacitor.\n"
-    "\n"
-    "[HIGH] Compressor Heat -- TOO HIGH\n"
-    "Reading: 96.3 C  |  Safe range: 55-90 C\n"
-    "Action: Clean condenser fins and check refrigerant pressure.\n"
-    "\n"
-    "[HIGH] Cooling Pipe Temperature -- TOO LOW\n"
-    "Reading: 2.1 C  |  Safe range: 5-20 C\n"
-    "Action: Turn off AC immediately and clean the air filter.\n"
-    "\n"
-    "View full report: http://airbnbrrr.local:8000/pages/alert?id=44"
-)
+message = "Test message from AirBnBrrr system. No links included."
 
 headers = {}
 if api_key:

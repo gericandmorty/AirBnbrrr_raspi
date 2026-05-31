@@ -121,8 +121,25 @@ def read_root(request: Request):
 	return HTMLResponse(_read_template("control_panel.html"))
 
 
+# Anomaly alert debouncer state
+ALERT_DELAY_SECONDS = 8.0
+alert_timer = None
+timer_lock = threading.Lock()
+
+def trigger_alert_action(data):
+	global alert_timer
+	with timer_lock:
+		alert_timer = None
+	print(f"\n[DEBOUNCER] 2-minute delay completed. Processing anomaly alert...")
+	try:
+		process_anomaly(data)
+	except Exception as e:
+		print(f"\n[ERROR] process_anomaly failed: {e}\n")
+
+
 @app.post("/telemetry", status_code=201)
 def receive_telemetry(payload: Telemetry, background_tasks: BackgroundTasks):
+	global alert_timer
 	# Use AC setup values from the ac_setup table (single source of truth)
 	ac_values = get_ac_setup()
 	ac_status = ac_values.get("ac_status", "Not Set")
@@ -169,13 +186,22 @@ def receive_telemetry(payload: Telemetry, background_tasks: BackgroundTasks):
 	if is_anom:
 		payload_dict["ac_status"] = ac_status
 		payload_dict["ac_thermostat"] = ac_thermostat
-		# Run in background so Pi gets instant 201 — AI + SMS happen after response
-		def _safe_process(data):
-			try:
-				process_anomaly(data)
-			except Exception as e:
-				print(f"\n[ERROR] process_anomaly failed: {e}\n")
-		background_tasks.add_task(_safe_process, payload_dict)
+		
+		# Handle debouncing with threading.Timer
+		with timer_lock:
+			if alert_timer is None:
+				print("\n[DEBOUNCER] Anomaly detected! Starting 2-minute alert delay...")
+				alert_timer = threading.Timer(ALERT_DELAY_SECONDS, trigger_alert_action, [payload_dict])
+				alert_timer.start()
+			else:
+				print("\n[DEBOUNCER] Anomaly detected, but alert timer is already running. Keeping original schedule.")
+	else:
+		# If system is normal, cancel any pending alert timer
+		with timer_lock:
+			if alert_timer is not None:
+				print("\n[DEBOUNCER] Telemetry is normal. Canceling pending anomaly alert!")
+				alert_timer.cancel()
+				alert_timer = None
 
 	return {"id": row_id, "status": "stored"}
 
