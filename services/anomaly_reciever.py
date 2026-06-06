@@ -174,7 +174,24 @@ def process_anomaly(anomaly_data):
 
         # Parse AI response to validate it is proper JSON
         try:
-            ai_parsed = json.loads(api_response) if isinstance(api_response, str) else api_response
+            cleaned_response = api_response.strip() if isinstance(api_response, str) else ""
+            
+            # Clean up markdown code blocks if the LLM output was wrapped
+            if cleaned_response.startswith("```"):
+                lines = cleaned_response.splitlines()
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                cleaned_response = "\n".join(lines).strip()
+            
+            # Extract JSON substring if there's leading/trailing non-JSON content
+            start_idx = cleaned_response.find("{")
+            end_idx = cleaned_response.rfind("}")
+            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                cleaned_response = cleaned_response[start_idx : end_idx + 1]
+
+            ai_parsed = json.loads(cleaned_response) if cleaned_response else api_response
             ai_diagnoses_payload = ai_parsed
         except json.JSONDecodeError:
             ai_diagnoses_payload = {"raw": api_response}

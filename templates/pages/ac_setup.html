@@ -6,6 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AirBnBrrr — AC Setup</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              brand: {
+                50: '#f6fbf8',
+                100: '#eef7f1',
+                500: '#22c55e',
+                600: '#0b6b2b',
+                700: '#095924',
+                800: '#3b6b52',
+                900: '#062b12',
+              }
+            }
+          }
+        }
+      }
+    </script>
     <style>
         /* Custom dropdown arrow for standard select elements */
         select {
@@ -31,25 +53,9 @@
       <main class="w-full max-w-lg bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
 
         <!-- Header Section -->
-        <div class="bg-teal-600 px-6 py-5 text-white flex items-center gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m10 20-2.5-2.5L10 15" />
-                <path d="M14 20l2.5-2.5L14 15" />
-                <path d="m20 10-2.5-2.5L15 10" />
-                <path d="M20 14l-2.5 2.5L15 14" />
-                <path d="m4 10 2.5-2.5L9 10" />
-                <path d="M4 14l2.5 2.5L9 14" />
-                <path d="m10 4-2.5 2.5L10 9" />
-                <path d="M14 4l2.5 2.5L14 9" />
-                <path d="M12 2v20" />
-                <path d="M2 12h20" />
-                <path d="m20 4-2.5 2.5L15 4" />
-                <path d="M4 4l2.5 2.5L9 4" />
-                <path d="m20 20-2.5-2.5L15 20" />
-                <path d="M4 20l2.5-2.5L9 20" />
-            </svg>
-            <h1 class="text-2xl font-bold tracking-tight">AirBnBrrr</h1>
+        <div class="bg-brand-600 px-6 py-5 text-white flex items-center gap-3">
+            <i data-lucide="thermometer-snowflake" class="w-7 h-7"></i>
+            <h1 class="text-2xl font-bold tracking-tight">AC Setup</h1>
         </div>
 
         <div class="p-6 sm:p-8">
@@ -59,7 +65,7 @@
                 <div>
                     <label for="ac_status" class="block text-sm font-semibold text-slate-700 mb-2">AC Status</label>
                     <select id="ac_status" name="ac_status"
-                        class="block w-full rounded-xl border-slate-300 bg-slate-50 py-3 px-4 pr-10 text-slate-900 border focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-200 focus:outline-none transition-colors duration-200 cursor-pointer">
+                        class="block w-full rounded-xl border-slate-300 bg-slate-50 py-3 px-4 pr-10 text-slate-900 border focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-brand-100 focus:outline-none transition-colors duration-200 cursor-pointer">
                         <option value="0">Off</option>
                         <option value="1">Fan</option>
                         <option value="2">Low Cool</option>
@@ -72,7 +78,7 @@
                     <label for="ac_thermostat" class="block text-sm font-semibold text-slate-700 mb-2">AC
                         Thermostat</label>
                     <select id="ac_thermostat" name="ac_thermostat"
-                        class="block w-full rounded-xl border-slate-300 bg-slate-50 py-3 px-4 pr-10 text-slate-900 border focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-200 focus:outline-none transition-colors duration-200 cursor-pointer">
+                        class="block w-full rounded-xl border-slate-300 bg-slate-50 py-3 px-4 pr-10 text-slate-900 border focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-brand-100 focus:outline-none transition-colors duration-200 cursor-pointer">
                         <option value="0">Not Set</option>
                         <option value="1">1</option>
                         <option value="2">2</option>
@@ -89,7 +95,7 @@
 
                 <div class="pt-4 flex flex-col sm:flex-row gap-3 items-center">
                     <button
-                        class="w-full sm:w-auto flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-5 rounded-xl transition-colors duration-200 shadow-sm flex items-center justify-center gap-2"
+                        class="w-full sm:w-auto flex-1 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 px-5 rounded-xl transition-colors duration-200 shadow-sm flex items-center justify-center gap-2 cursor-pointer border-0"
                         type="submit">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

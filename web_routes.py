@@ -26,7 +26,15 @@ def _read_template(filename: str) -> str:
             return f"<!-- Include error: {inc_file} not found -->"
         return re.sub(pattern, replace, text)
 
-    return resolve_includes(content)
+    resolved = resolve_includes(content)
+    if 'rel="icon"' not in resolved and 'rel="shortcut icon"' not in resolved:
+        favicon_html = '\n    <link rel="icon" type="image/png" href="/assets/xd/logo.png?v=3">\n    <link rel="shortcut icon" type="image/png" href="/assets/xd/logo.png?v=3">'
+        if "<head>" in resolved:
+            resolved = resolved.replace("<head>", f"<head>{favicon_html}", 1)
+        elif "<HEAD>" in resolved:
+            resolved = resolved.replace("<HEAD>", f"<HEAD>{favicon_html}", 1)
+            
+    return resolved
 
 
 @router.get("/pages", response_class=HTMLResponse)

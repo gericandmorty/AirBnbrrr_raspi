@@ -4,7 +4,7 @@ from database import get_db_connection
 
 router = APIRouter()
 DEFAULT_AI_URL = "https://api.cerebras.ai/v1/chat/completions"
-DEFAULT_AI_MODEL = "qwen-3-235b-a22b-instruct-2507"
+DEFAULT_AI_MODEL = "zai-glm-4.7"
 
 class AISetup(BaseModel):
     api_url: str = DEFAULT_AI_URL

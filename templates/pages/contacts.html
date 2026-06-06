@@ -8,6 +8,28 @@
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              brand: {
+                50: '#f6fbf8',
+                100: '#eef7f1',
+                500: '#22c55e',
+                600: '#0b6b2b',
+                700: '#095924',
+                800: '#3b6b52',
+                900: '#062b12',
+              }
+            }
+          }
+        }
+      }
+    </script>
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -56,7 +78,7 @@
 
         <!-- Header -->
         <header class="mb-8 flex items-center gap-4">
-            <div class="bg-blue-600 text-white p-3 rounded-2xl shadow-lg shadow-blue-600/20">
+            <div class="bg-brand-600 text-white p-3 rounded-2xl shadow-lg shadow-brand-600/20">
                 <i data-lucide="contact" class="w-7 h-7"></i>
             </div>
             <div>
@@ -79,7 +101,7 @@
                             <i data-lucide="user" class="w-4 h-4"></i>
                         </div>
                         <input id="name" placeholder="John Doe" required
-                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 rounded-xl text-slate-900 text-sm transition-all outline-none" />
+                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-brand-100 rounded-xl text-slate-900 text-sm transition-all outline-none" />
                     </div>
                 </div>
 
@@ -93,13 +115,13 @@
                         </div>
                         <input id="ph_number" placeholder="e.g. 12345678901" required pattern="\d{10,15}"
                             title="Please enter a valid phone number"
-                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 rounded-xl text-slate-900 text-sm transition-all outline-none" />
+                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-brand-100 rounded-xl text-slate-900 text-sm transition-all outline-none" />
                     </div>
                 </div>
 
                 <div class="w-full sm:w-auto">
                     <button type="submit"
-                        class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl shadow-sm shadow-blue-600/30 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl shadow-sm shadow-brand-600/30 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 border-0 cursor-pointer">
                         <i data-lucide="plus" class="w-4 h-4"></i>
                         <span>Add Contact</span>
                     </button>
@@ -136,7 +158,7 @@
             <div id="contacts-container" class="divide-y divide-slate-100">
                 <!-- Loading Skeleton -->
                 <div class="p-8 text-center text-slate-400 flex flex-col items-center justify-center">
-                    <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-3 text-blue-500"></i>
+                    <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-3 text-brand-600"></i>
                     <p class="text-sm font-medium">Loading contacts...</p>
                 </div>
             </div>
@@ -348,7 +370,7 @@
             <label class="sm:hidden text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Name</label>
             <div class="relative">
               <input data-id-name="${c.id}" value="${escapedName}" 
-                     class="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 rounded-lg px-3 py-2 text-slate-900 text-sm font-medium transition-all outline-none" />
+                     class="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-600/10 rounded-lg px-3 py-2 text-slate-900 text-sm font-medium transition-all outline-none" />
               <i data-lucide="edit-3" class="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity"></i>
             </div>
           </div>
@@ -358,7 +380,7 @@
             <label class="sm:hidden text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Phone</label>
             <div class="relative">
               <input data-id-phone="${c.id}" value="${escapedPhone}" 
-                     class="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 rounded-lg px-3 py-2 text-slate-600 text-sm transition-all outline-none" />
+                     class="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-600/10 rounded-lg px-3 py-2 text-slate-600 text-sm transition-all outline-none" />
               <i data-lucide="edit-3" class="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity"></i>
             </div>
           </div>
@@ -368,13 +390,13 @@
             <label class="sm:hidden text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</label>
             <label class="relative inline-flex items-center cursor-pointer group/toggle" title="Toggle Status">
               <input type="checkbox" class="sr-only peer enable-switch" data-id-enable="${c.id}" ${c.enable ? 'checked' : ''}>
-              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 group-hover/toggle:shadow-sm"></div>
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 group-hover/toggle:shadow-sm"></div>
             </label>
           </div>
 
           <!-- Actions -->
           <div class="w-full sm:w-auto flex items-center justify-end gap-2 mt-2 sm:mt-0 pt-4 sm:pt-0 border-t border-slate-100 sm:border-t-0">
-            <button class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 bg-slate-50 sm:bg-transparent rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-100" data-action="save" data-id="${c.id}">
+            <button class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-brand-600 hover:text-brand-700 hover:bg-brand-50 bg-slate-50 sm:bg-transparent rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-brand-100 border-0 cursor-pointer" data-action="save" data-id="${c.id}">
               <i data-lucide="save" class="w-4 h-4"></i> <span class="sm:hidden lg:inline">Save</span>
             </button>
             <button class="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 bg-slate-50 sm:bg-transparent rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-100" data-action="delete" data-id="${c.id}" title="Delete Contact">

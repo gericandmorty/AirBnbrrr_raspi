@@ -4,7 +4,7 @@ import json
 # Choose the target URL:
 # - Use "http://airbnbrrr.local:8000/telemetry" to send to the Raspberry Pi over the network.
 # - Use "http://127.0.0.1:8000/telemetry" if running directly on the Raspberry Pi (or testing local server).
-URL = "http://airbnbrrr.local:8000/telemetry"
+URL = "http://127.0.0.1:8000/telemetry"
 
 # Create a payload with multiple severe anomalies
 # This is guaranteed to trigger the Isolation Forest model and multiple Rule Engine safety checks.
