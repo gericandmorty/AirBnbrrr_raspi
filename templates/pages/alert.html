@@ -33,13 +33,32 @@
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
     /* Styled scrollbar for the analysis panels */
     .custom-scrollbar::-webkit-scrollbar { width: 5px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Card micro-animations and premium styling */
+    .finding-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .finding-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+      border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    /* Hide default scrollbars for tabs */
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   </style>
 </head>
 <body class="bg-brand-50 text-slate-800 font-sans min-h-screen">
@@ -73,20 +92,54 @@
     <section class="mb-8">
       <!-- Status banner populated by JS -->
       <div id="status-banner" class="mb-5 hidden"></div>
-      <h3 class="text-xl font-bold text-brand-900 mb-4 tracking-tight">What's Wrong?</h3>
+      
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <h3 class="text-xl font-bold text-brand-900 tracking-tight">What's Wrong?</h3>
+      </div>
+
+      <!-- Interactive Filter Toolbar -->
+      <div class="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm transition-all duration-300">
+        <div class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-none">
+          <button id="filter-ALL" onclick="setSeverityFilter('ALL')" class="px-3.5 py-2 text-xs font-bold rounded-xl transition-all duration-200 flex items-center gap-1.5 border-0 cursor-pointer">
+            <span>All Issues</span>
+            <span id="cnt-ALL" class="bg-white/20 text-white px-1.5 py-0.5 rounded-md text-[10px]">0</span>
+          </button>
+          <button id="filter-HIGH_CRITICAL" onclick="setSeverityFilter('HIGH_CRITICAL')" class="px-3.5 py-2 text-xs font-bold rounded-xl transition-all duration-200 flex items-center gap-1.5 border-0 cursor-pointer">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+            <span>Urgent/High</span>
+            <span id="cnt-HIGH_CRITICAL" class="px-1.5 py-0.5 rounded-md text-[10px]">0</span>
+          </button>
+          <button id="filter-MEDIUM" onclick="setSeverityFilter('MEDIUM')" class="px-3.5 py-2 text-xs font-bold rounded-xl transition-all duration-200 flex items-center gap-1.5 border-0 cursor-pointer">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+            <span>Caution</span>
+            <span id="cnt-MEDIUM" class="px-1.5 py-0.5 rounded-md text-[10px]">0</span>
+          </button>
+          <button id="filter-LOW" onclick="setSeverityFilter('LOW')" class="px-3.5 py-2 text-xs font-bold rounded-xl transition-all duration-200 flex items-center gap-1.5 border-0 cursor-pointer">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            <span>Info</span>
+            <span id="cnt-LOW" class="px-1.5 py-0.5 rounded-md text-[10px]">0</span>
+          </button>
+        </div>
+        <div class="relative w-full sm:w-64 flex-shrink-0">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+            <i data-lucide="search" class="w-4 h-4"></i>
+          </span>
+          <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="Search diagnostic issues..." class="pl-9 pr-4 py-2 w-full text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all">
+        </div>
+      </div>
       
       <!-- Two-panel layout: Rule Engine + AI -->
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
         <!-- PANEL A: Rule Engine -->
         <div>
-          <div class="flex items-center gap-2 mb-3">
-            <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+          <div class="flex items-center gap-2 mb-3 px-1">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shadow-sm">
               <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
             </div>
             <div>
               <h4 class="text-base font-bold text-slate-800">Automatic Safety Checks</h4>
-              <p class="text-xs text-slate-500">Each sensor tested against its safe operating limits</p>
+              <p class="text-xs text-slate-500">Deterministic check findings from AC specifications</p>
             </div>
           </div>
           <div id="rule-container" class="space-y-3 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
@@ -99,13 +152,13 @@
 
         <!-- PANEL B: AI Diagnosis -->
         <div>
-          <div class="flex items-center gap-2 mb-3">
-            <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+          <div class="flex items-center gap-2 mb-3 px-1">
+            <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shadow-sm">
               <i data-lucide="brain" class="w-4 h-4 text-blue-600"></i>
             </div>
             <div>
               <h4 class="text-base font-bold text-slate-800">AI Expert Opinion</h4>
-              <p class="text-xs text-slate-500">Deeper context from AI — may not always be available</p>
+              <p class="text-xs text-slate-500">Deeper contextual model findings & predictions</p>
             </div>
           </div>
           <div id="diagnoses-container" class="space-y-3 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
@@ -125,40 +178,48 @@
       </div>
 
       <!-- Computation Steps (full-width, collapsible) -->
-      <div class="mt-6">
-        <button id="toggle-steps" onclick="toggleComputationSteps()" 
-          class="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors mb-3 group">
-          <i data-lucide="flask-conical" class="w-4 h-4 text-slate-400 group-hover:text-slate-600"></i>
-          <span>Show how we calculated this (technical)</span>
-          <i data-lucide="chevron-down" id="steps-chevron" class="w-4 h-4 text-slate-400 transition-transform"></i>
-        </button>
-        <div id="computation-steps" class="hidden">
-          <div class="bg-slate-900 rounded-2xl p-4 overflow-x-auto">
-            <p class="text-xs text-slate-500 mb-3 font-mono">// Step-by-step evaluation of each sensor against thresholds</p>
-            <table class="w-full text-xs font-mono text-left">
-              <thead>
-                <tr class="text-slate-400 border-b border-slate-700">
-                  <th class="pb-2 pr-4">Sensor</th>
-                  <th class="pb-2 pr-4">Measured</th>
-                  <th class="pb-2 pr-4">Normal Range</th>
-                  <th class="pb-2 pr-4">Expression / Result</th>
-                  <th class="pb-2">Verdict</th>
-                </tr>
-              </thead>
-              <tbody id="steps-tbody" class="divide-y divide-slate-800">
-              </tbody>
-            </table>
+      <div class="mt-8 bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <button id="toggle-steps" onclick="toggleComputationSteps()" 
+            class="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white transition-colors group bg-transparent border-0 cursor-pointer">
+            <i data-lucide="terminal" class="w-4 h-4 text-emerald-400 group-hover:text-emerald-300"></i>
+            <span>Show Algorithm Computation Steps (technical)</span>
+            <i data-lucide="chevron-down" id="steps-chevron" class="w-4 h-4 text-slate-400 transition-transform"></i>
+          </button>
+          
+          <!-- Interactive Table Filter -->
+          <div id="table-filter-group" class="hidden flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 self-start sm:self-auto">
+            <button onclick="setTableFilter('ALL')" id="tbl-filter-ALL" class="px-2.5 py-1 text-[10px] font-bold rounded border-0 cursor-pointer bg-slate-800 text-white transition-all">All Steps</button>
+            <button onclick="setTableFilter('TRIGGERED')" id="tbl-filter-TRIGGERED" class="px-2.5 py-1 text-[10px] font-bold rounded border-0 cursor-pointer text-slate-400 hover:text-white transition-all bg-transparent">Triggered Only</button>
+            <button onclick="setTableFilter('PASS')" id="tbl-filter-PASS" class="px-2.5 py-1 text-[10px] font-bold rounded border-0 cursor-pointer text-slate-400 hover:text-white transition-all bg-transparent">Passed Only</button>
           </div>
+        </div>
+
+        <div id="computation-steps" class="hidden mt-4 pt-4 border-t border-slate-800 overflow-x-auto">
+          <p class="text-xs text-slate-500 mb-3 font-mono">// Step-by-step evaluation of each sensor against thresholds</p>
+          <table class="w-full text-xs font-mono text-left">
+            <thead>
+              <tr class="text-slate-400 border-b border-slate-800">
+                <th class="pb-2 pr-4 font-semibold">Sensor</th>
+                <th class="pb-2 pr-4 font-semibold">Measured</th>
+                <th class="pb-2 pr-4 font-semibold">Normal Range</th>
+                <th class="pb-2 pr-4 font-semibold">Expression / Result</th>
+                <th class="pb-2 font-semibold">Verdict</th>
+              </tr>
+            </thead>
+            <tbody id="steps-tbody" class="divide-y divide-slate-800">
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
 
     <!-- Action Buttons -->
     <div class="flex flex-col sm:flex-row items-center gap-3 mt-8 pt-6 border-t border-slate-200">
-      <a href="/pages/alerts" class="w-full sm:w-auto text-center px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors focus:ring-2 focus:ring-slate-400 focus:outline-none">
+      <a href="/pages/alerts" class="w-full sm:w-auto text-center px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors focus:ring-2 focus:ring-slate-400 focus:outline-none no-underline">
         &larr; Back to Alerts
       </a>
-      <button id="delete-btn" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 font-medium transition-colors border border-red-200 focus:ring-2 focus:ring-red-400 focus:outline-none">
+      <button id="delete-btn" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 font-medium transition-colors border border-red-200 focus:ring-2 focus:ring-red-400 focus:outline-none cursor-pointer">
         Delete Alert
       </button>
     </div>
@@ -179,10 +240,10 @@
         </div>
       </div>
       <div class="flex flex-col sm:flex-row justify-end gap-3 mt-6">
-        <button id="cancel-delete" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors">
+        <button id="cancel-delete" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors border-0 cursor-pointer">
           Cancel
         </button>
-        <button id="confirm-delete" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors shadow-sm">
+        <button id="confirm-delete" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors shadow-sm border-0 cursor-pointer">
           Yes, Delete
         </button>
       </div>
@@ -190,6 +251,48 @@
   </div>
 
   <script>
+    // State management
+    let rawDiagnosesData = null;
+    let activeFilter = 'ALL';
+    let searchQuery = '';
+    let activeTableFilter = 'ALL';
+
+    function cleanAndParseJSON(text) {
+      if (!text) return null;
+      let clean = text.trim();
+      
+      // Try direct parse
+      try {
+        return JSON.parse(clean);
+      } catch (e) {}
+      
+      // Remove markdown fences
+      if (clean.startsWith('```')) {
+        const lines = clean.split('\n');
+        if (lines[0].startsWith('```')) {
+          lines.shift();
+        }
+        if (lines.length > 0 && lines[lines.length - 1].trim() === '```') {
+          lines.pop();
+        }
+        clean = lines.join('\n').trim();
+        try {
+          return JSON.parse(clean);
+        } catch (e) {}
+      }
+      
+      // Find JSON bounds
+      const start = clean.indexOf('{');
+      const end = clean.lastIndexOf('}');
+      if (start !== -1 && end !== -1 && end > start) {
+        try {
+          return JSON.parse(clean.substring(start, end + 1));
+        } catch (e) {}
+      }
+      
+      return null;
+    }
+
     // Example data fallback for previewing without a backend
     const mockData = {
       id: "ALT-84920",
@@ -283,106 +386,242 @@
 
     // ─── Parse numbered action steps ───────────────────────────────
     function parseSteps(text) {
+      if (!text) return [];
       const parts = text.split(/(?=\d+\.\s)/).map(s => s.replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
-      return parts.length > 1 ? parts : [text];
+      return parts.length > 0 ? parts : [text];
+    }
+
+    // ─── Interactive filtering operations ──────────────────────────
+    function setSeverityFilter(filterVal) {
+      activeFilter = filterVal;
+      ['ALL', 'HIGH_CRITICAL', 'MEDIUM', 'LOW'].forEach(val => {
+        const btn = document.getElementById(`filter-${val}`);
+        if (!btn) return;
+        if (val === filterVal) {
+          btn.classList.add('bg-slate-800', 'text-white', 'shadow-sm');
+          btn.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+        } else {
+          btn.classList.remove('bg-slate-800', 'text-white', 'shadow-sm');
+          btn.classList.add('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+        }
+      });
+      renderAllActive();
+    }
+
+    function handleSearch(val) {
+      searchQuery = val.toLowerCase().trim();
+      renderAllActive();
+    }
+
+    function setTableFilter(filterVal) {
+      activeTableFilter = filterVal;
+      ['ALL', 'TRIGGERED', 'PASS'].forEach(val => {
+        const btn = document.getElementById(`tbl-filter-${val}`);
+        if (!btn) return;
+        if (val === filterVal) {
+          btn.classList.add('bg-slate-800', 'text-white');
+          btn.classList.remove('text-slate-400', 'hover:text-white');
+        } else {
+          btn.classList.remove('bg-slate-800', 'text-white');
+          btn.classList.add('text-slate-400', 'hover:text-white');
+        }
+      });
+      renderTableOnly();
+    }
+
+    // ─── Copy to Clipboard ─────────────────────────────────────────
+    function copyToClipboard(text, buttonId) {
+      const cleanText = text.replace(/\\'/g, "'");
+      navigator.clipboard.writeText(cleanText).then(() => {
+        const btn = document.getElementById(buttonId);
+        if (!btn) return;
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i><span class="text-emerald-700">Copied!</span>`;
+        lucide.createIcons();
+        setTimeout(() => {
+          btn.innerHTML = originalHTML;
+          lucide.createIcons();
+        }, 2000);
+      }).catch(err => {
+        console.error('Could not copy text: ', err);
+      });
+    }
+
+    // ─── Toggle Details inside Card ────────────────────────────────
+    function toggleDetails(id) {
+      const el = document.getElementById(`details-${id}`);
+      const chev = document.getElementById(`chevron-${id}`);
+      if (!el || !chev) return;
+      
+      const isHidden = el.classList.contains('hidden');
+      if (isHidden) {
+        el.classList.remove('hidden');
+        chev.style.transform = 'rotate(180deg)';
+      } else {
+        el.classList.add('hidden');
+        chev.style.transform = '';
+      }
+    }
+
+    // ─── Filter & Render counts in pills ────────────────────────────
+    function updateCounts() {
+      if (!rawDiagnosesData) return;
+
+      const ruleFindings = (rawDiagnosesData.rule_diagnoses && rawDiagnosesData.rule_diagnoses.findings) || [];
+      const aiList = (rawDiagnosesData.ai_diagnoses && rawDiagnosesData.ai_diagnoses.diagnoses) || [];
+
+      const isHigh = (sev) => sev === 'Critical' || sev === 'High';
+      const isMed = (sev) => sev === 'Medium';
+      const isLow = (sev) => sev === 'Low' || sev === 'Normal';
+
+      const allCount = ruleFindings.length + aiList.length;
+      const highCount = ruleFindings.filter(f => isHigh(f.severity)).length + aiList.filter(d => isHigh(d.severity)).length;
+      const medCount = ruleFindings.filter(f => isMed(f.severity)).length + aiList.filter(d => isMed(d.severity)).length;
+      const lowCount = ruleFindings.filter(f => isLow(f.severity)).length + aiList.filter(d => isLow(d.severity)).length;
+
+      document.getElementById('cnt-ALL').textContent = allCount;
+      document.getElementById('cnt-HIGH_CRITICAL').textContent = highCount;
+      document.getElementById('cnt-MEDIUM').textContent = medCount;
+      document.getElementById('cnt-LOW').textContent = lowCount;
+    }
+
+    // ─── Unified Render Entrypoint ─────────────────────────────────
+    function renderAllActive() {
+      if (!rawDiagnosesData) {
+        const container = document.getElementById('diagnoses-container');
+        container.innerHTML = '<div class="p-5 bg-red-50 border border-red-200 rounded-xl mb-4 text-red-700 text-sm">Failed to parse diagnostic data.</div>';
+        return;
+      }
+      renderRuleEngineView();
+      renderAIDiagnosesView();
+      renderTableOnly();
     }
 
     // ─── Render Rule Engine Panel ──────────────────────────────────
-    function renderRuleEngine(ruleResult) {
+    function renderRuleEngineView() {
       const container = document.getElementById('rule-container');
       container.innerHTML = '';
 
+      const ruleResult = rawDiagnosesData.rule_diagnoses;
       if (!ruleResult) {
         container.innerHTML = '<div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 text-slate-500 text-sm">No automatic check data available for this alert.</div>';
         return;
       }
 
-      // Status banner
+      // Overall status banner
       const sev = ruleResult.overall_severity || 'Normal';
       const banner = document.getElementById('status-banner');
-      const bannerIcon = sev === 'Normal' ? 'check-circle' : sev === 'Low' ? 'info' : sev === 'Medium' ? 'alert-triangle' : 'alert-octagon';
-      const bannerBg   = sev === 'Normal' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : sev === 'Low' ? 'bg-blue-50 border-blue-200 text-blue-800' : sev === 'Medium' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-red-50 border-red-200 text-red-800';
-      const bannerMsg  = sev === 'Normal' ? 'All sensors are within safe limits.' : `${ruleResult.sensors_triggered} of ${ruleResult.sensors_checked} sensors are outside safe limits.`;
-      banner.className = `mb-5 flex items-center gap-3 p-4 rounded-2xl border ${bannerBg}`;
-      banner.innerHTML = `<i data-lucide="${bannerIcon}" class="w-5 h-5 flex-shrink-0"></i><div><p class="font-semibold text-sm">${SEV_LABEL[sev] || sev} — ${bannerMsg}</p></div>`;
-      lucide.createIcons();
+      if (banner) {
+        const bannerIcon = sev === 'Normal' ? 'check-circle' : sev === 'Low' ? 'info' : sev === 'Medium' ? 'alert-triangle' : 'alert-octagon';
+        const bannerBg   = sev === 'Normal' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : sev === 'Low' ? 'bg-blue-50 border-blue-200 text-blue-800' : sev === 'Medium' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-red-50 border-red-200 text-red-800';
+        const bannerMsg  = sev === 'Normal' ? 'All sensors are within safe limits.' : `${ruleResult.sensors_triggered} of ${ruleResult.sensors_checked} sensors are outside safe limits.`;
+        banner.className = `mb-5 flex items-center gap-3 p-4 rounded-2xl border ${bannerBg}`;
+        banner.innerHTML = `<i data-lucide="${bannerIcon}" class="w-5 h-5 flex-shrink-0"></i><div><p class="font-semibold text-sm">${SEV_LABEL[sev] || sev} — ${bannerMsg}</p></div>`;
+        banner.classList.remove('hidden');
+      }
+
+      let findings = ruleResult.findings || [];
+
+      // Filter by Severity
+      if (activeFilter === 'HIGH_CRITICAL') {
+        findings = findings.filter(f => f.severity === 'Critical' || f.severity === 'High');
+      } else if (activeFilter === 'MEDIUM') {
+        findings = findings.filter(f => f.severity === 'Medium');
+      } else if (activeFilter === 'LOW') {
+        findings = findings.filter(f => f.severity === 'Low' || f.severity === 'Normal');
+      }
+
+      // Filter by Search Query
+      if (searchQuery) {
+        findings = findings.filter(f => {
+          const info = SENSOR_INFO[f.sensor_key] || { label: f.sensor, hint: '' };
+          return (f.issue || '').toLowerCase().includes(searchQuery) || 
+                 (f.root_cause || '').toLowerCase().includes(searchQuery) || 
+                 (info.label || '').toLowerCase().includes(searchQuery) ||
+                 (info.hint || '').toLowerCase().includes(searchQuery);
+        });
+      }
+
+      if (findings.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 bg-slate-50/50 border border-slate-200 border-dashed rounded-2xl text-slate-400 text-center flex flex-col items-center justify-center gap-2">
+            <i data-lucide="inbox" class="w-8 h-8 text-slate-300"></i>
+            <span class="text-sm font-medium">No safety checks matching criteria.</span>
+          </div>`;
+        lucide.createIcons();
+        return;
+      }
 
       // Summary row
       container.insertAdjacentHTML('beforeend', `
-        <div class="rounded-2xl p-3 border ${getSeverityStyles(sev)} mb-1">
-          <div class="flex justify-between text-sm">
+        <div class="rounded-2xl p-3 border ${getSeverityStyles(sev)} mb-1 bg-white/60">
+          <div class="flex justify-between text-xs font-semibold">
             <span>Sensors checked: <strong>${ruleResult.sensors_checked}</strong></span>
             <span>Problems found: <strong class="${ruleResult.sensors_triggered > 0 ? 'text-red-600' : 'text-emerald-600'}">${ruleResult.sensors_triggered}</strong></span>
           </div>
         </div>`);
 
-      const findings = ruleResult.findings || [];
-      if (findings.length === 0) {
+      findings.forEach((f, i) => {
+        const info   = SENSOR_INFO[f.sensor_key] || { label: f.sensor, icon: 'activity', hint: '' };
+        const card   = getSeverityStyles(f.severity);
+        const badge  = getSeverityBadge(f.severity);
+        const bar    = buildRangeBar(f.measured_value, f.normal_range, f.unit);
+        const steps  = parseSteps(f.recommended_action);
+        const stepsHTML = steps.map((s, n) => `<li class="flex gap-2"><span class="font-bold flex-shrink-0 text-slate-400">${n+1}.</span><span>${s}</span></li>`).join('');
+        
         container.insertAdjacentHTML('beforeend', `
-          <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-700 text-sm flex items-center gap-2">
-            <i data-lucide="shield-check" class="w-5 h-5 flex-shrink-0"></i> Everything looks good — no issues detected.
-          </div>`);
-      } else {
-        findings.forEach((f, i) => {
-          const info   = SENSOR_INFO[f.sensor_key] || { label: f.sensor, icon: 'activity', hint: '' };
-          const card   = getSeverityStyles(f.severity);
-          const badge  = getSeverityBadge(f.severity);
-          const bar    = buildRangeBar(f.measured_value, f.normal_range, f.unit);
-          const steps  = parseSteps(f.recommended_action);
-          const stepsHTML = steps.map((s, n) => `<li class="flex gap-2"><span class="font-bold flex-shrink-0">${n+1}.</span><span>${s}</span></li>`).join('');
-          container.insertAdjacentHTML('beforeend', `
-            <div class="rounded-2xl border ${card} overflow-hidden fade-in" style="animation-delay:${i*0.04}s">
-              <div class="flex items-center gap-3 px-4 pt-4 pb-2">
-                <div class="w-9 h-9 rounded-xl bg-white/50 flex items-center justify-center flex-shrink-0">
+          <div class="finding-card rounded-2xl border ${card} overflow-hidden bg-white/80 backdrop-blur-md shadow-sm hover:shadow-md transition-all duration-300 fade-in" style="animation-delay:${i*0.04}s">
+            <div class="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-white/80 flex items-center justify-center flex-shrink-0 shadow-sm border border-slate-100">
                   <i data-lucide="${info.icon}" class="w-5 h-5"></i>
                 </div>
-                <div class="flex-1 min-w-0">
+                <div class="min-w-0">
                   <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-xs font-bold px-2 py-0.5 rounded-full ${badge}">${SEV_LABEL[f.severity] || f.severity}</span>
-                    <span class="text-xs opacity-60">${f.status === 'Predicted' ? 'Possible future issue' : 'Happening now'}</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badge}">${SEV_LABEL[f.severity] || f.severity}</span>
+                    <span class="text-[10px] opacity-60 font-medium">${f.status === 'Predicted' ? 'Possible future issue' : 'Happening now'}</span>
                   </div>
-                  <h5 class="font-bold text-sm mt-0.5 leading-tight">${info.label}</h5>
-                  <p class="text-xs opacity-60">${info.hint}</p>
+                  <h5 class="font-bold text-sm mt-0.5 leading-tight text-slate-800">${info.label}</h5>
                 </div>
               </div>
-              <div class="px-4 pb-1">${bar}</div>
-              <div class="mx-4 mb-3 mt-2 bg-white/50 rounded-xl p-3 space-y-2 text-xs">
-                <p class="leading-relaxed">${f.root_cause}</p>
-                <div class="pt-2 border-t border-white/60">
-                  <p class="font-bold mb-1 text-xs uppercase tracking-wide opacity-60">What to do</p>
-                  <ol class="space-y-1">${stepsHTML}</ol>
+              <button onclick="toggleDetails('rule-${i}')" class="p-1.5 hover:bg-slate-100 rounded-lg transition-all text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer flex items-center justify-center">
+                <i data-lucide="chevron-down" id="chevron-rule-${i}" class="w-5 h-5 transition-transform duration-200" style="transform: rotate(180deg)"></i>
+              </button>
+            </div>
+            
+            <div class="px-4 pb-1">${bar}</div>
+            
+            <div id="details-rule-${i}" class="mx-4 mb-3 mt-2 bg-white/90 rounded-xl p-3.5 border border-slate-100/50 space-y-3 text-xs shadow-inner">
+              <p class="leading-relaxed text-slate-600 font-medium">${f.root_cause}</p>
+              <div class="pt-3 border-t border-slate-100 flex flex-col gap-2">
+                <div class="flex justify-between items-center">
+                  <p class="font-bold text-slate-400 text-[10px] uppercase tracking-wider">What to do</p>
+                  <button id="copy-btn-rule-${i}" onclick="copyToClipboard('${f.recommended_action.replace(/'/g, "\\'")}', 'copy-btn-rule-${i}')" class="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-slate-800 transition-colors bg-transparent border-0 cursor-pointer">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span>Copy Actions</span>
+                  </button>
                 </div>
+                <ol class="space-y-1.5 text-slate-700 font-medium">${stepsHTML}</ol>
               </div>
-            </div>`);
-        });
-      }
+            </div>
+          </div>`);
+      });
 
       lucide.createIcons();
-
-      // Computation steps table
-      const steps = ruleResult.computation_steps || [];
-      const tbody = document.getElementById('steps-tbody');
-      tbody.innerHTML = '';
-      steps.forEach(step => {
-        const color = getRuleStepColor(step.result);
-        const expr  = step.expression || step.reason || '\u2014';
-        const lbl   = step.result === 'TRIGGERED' ? '\u2717 TRIGGERED' : step.result === 'PASS' ? '\u2713 PASS' : '\u2014 SKIP';
-        tbody.insertAdjacentHTML('beforeend', `
-          <tr class="${step.result === 'TRIGGERED' ? 'bg-red-950/20' : ''}">
-            <td class="py-2 pr-4 text-slate-300">${step.sensor}</td>
-            <td class="py-2 pr-4 text-slate-300">${step.value}</td>
-            <td class="py-2 pr-4 text-slate-500">${step.normal_range}</td>
-            <td class="py-2 pr-4 ${color}">${expr}</td>
-            <td class="py-2 font-bold ${color}">${lbl}</td>
-          </tr>`);
-      });
-      container.scrollTop = 0;
     }
 
     // ─── Render AI Diagnosis Panel ─────────────────────────────────
-    function renderAIDiagnoses(aiDiagnoses) {
+    function renderAIDiagnosesView() {
       const container = document.getElementById('diagnoses-container');
       container.innerHTML = '';
+
+      let aiDiagnoses = rawDiagnosesData.ai_diagnoses;
+      if (aiDiagnoses && aiDiagnoses.raw && !aiDiagnoses.diagnoses) {
+        const parsedRaw = cleanAndParseJSON(aiDiagnoses.raw);
+        if (parsedRaw && parsedRaw.diagnoses) {
+          aiDiagnoses = parsedRaw;
+        }
+      }
 
       if (!aiDiagnoses) {
         container.innerHTML = '<div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 text-slate-500 text-sm">No AI opinion available for this alert.</div>';
@@ -390,17 +629,56 @@
       }
       if (aiDiagnoses.error) {
         container.innerHTML = `
-          <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-sm">
-            <div class="flex items-center gap-2 mb-1 font-semibold"><i data-lucide="wifi-off" class="w-4 h-4"></i> AI not available for this alert</div>
-            <p class="text-xs opacity-80">The automatic safety checks above are still valid and reliable.</p>
+          <div class="p-5 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-sm flex flex-col gap-3 shadow-inner">
+            <div class="flex items-start gap-2.5">
+              <div class="p-1.5 bg-amber-100 rounded-lg text-amber-800 flex items-center justify-center">
+                <i data-lucide="wifi-off" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h5 class="font-bold text-sm leading-tight text-amber-900">AI not available for this alert</h5>
+                <p class="text-xs text-amber-700/95 mt-1 leading-relaxed">
+                  Reason: <code class="bg-amber-100/60 px-1 py-0.5 rounded font-mono text-[11px]">${aiDiagnoses.error}</code>.
+                  Please make sure you have supplied an API Key in the AI configuration.
+                </p>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <a href="/pages/ai_setup" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm transition-colors no-underline">
+                <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+                <span>Configure AI API Key</span>
+              </a>
+            </div>
           </div>`;
         lucide.createIcons();
         return;
       }
 
-      const list = aiDiagnoses.diagnoses || [];
+      let list = aiDiagnoses.diagnoses || [];
+
+      // Filter by Severity
+      if (activeFilter === 'HIGH_CRITICAL') {
+        list = list.filter(d => d.severity === 'Critical' || d.severity === 'High');
+      } else if (activeFilter === 'MEDIUM') {
+        list = list.filter(d => d.severity === 'Medium');
+      } else if (activeFilter === 'LOW') {
+        list = list.filter(d => d.severity === 'Low' || d.severity === 'Normal');
+      }
+
+      // Filter by Search Query
+      if (searchQuery) {
+        list = list.filter(d => {
+          return (d.issue || '').toLowerCase().includes(searchQuery) || 
+                 (d.root_cause || '').toLowerCase().includes(searchQuery);
+        });
+      }
+
       if (list.length === 0) {
-        container.innerHTML = '<div class="p-5 bg-blue-50 rounded-2xl border border-blue-200 text-blue-700 text-sm">The AI did not find additional issues.</div>';
+        container.innerHTML = `
+          <div class="p-8 bg-slate-50/50 border border-slate-200 border-dashed rounded-2xl text-slate-400 text-center flex flex-col items-center justify-center gap-2">
+            <i data-lucide="inbox" class="w-8 h-8 text-slate-300"></i>
+            <span class="text-sm font-medium">No AI diagnoses matching criteria.</span>
+          </div>`;
+        lucide.createIcons();
         return;
       }
 
@@ -411,79 +689,108 @@
         const confC = conf >= 80 ? 'bg-emerald-500' : conf >= 50 ? 'bg-amber-500' : 'bg-slate-400';
         const isCurrent = (diag.status || '').toLowerCase() === 'current';
         const steps = parseSteps(diag.recommended_action || '');
-        const stepsHTML = steps.map((s, n) => `<li class="flex gap-2"><span class="font-bold flex-shrink-0">${n+1}.</span><span>${s}</span></li>`).join('');
+        const stepsHTML = steps.map((s, n) => `<li class="flex gap-2"><span class="font-bold flex-shrink-0 text-slate-400">${n+1}.</span><span>${s}</span></li>`).join('');
+        
         container.insertAdjacentHTML('beforeend', `
-          <div class="rounded-2xl border ${card} overflow-hidden fade-in" style="animation-delay:${i*0.05}s">
-            <div class="px-4 pt-4 pb-2">
-              <div class="flex items-center gap-2 flex-wrap mb-1">
-                <span class="text-xs font-bold px-2 py-0.5 rounded-full ${badge}">${SEV_LABEL[diag.severity] || diag.severity}</span>
-                <span class="text-xs px-2 py-0.5 rounded-full border font-medium ${isCurrent ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-purple-100 text-purple-700 border-purple-200'}">
-                  ${isCurrent ? 'Happening now' : 'Possible future issue'}
-                </span>
-              </div>
-              <h4 class="font-bold text-sm leading-tight">${diag.issue}</h4>
-              <div class="flex items-center gap-2 mt-2">
-                <span class="text-xs opacity-60">AI Confidence:</span>
-                <div class="flex-1 h-1.5 rounded-full bg-white/50">
-                  <div class="h-full rounded-full ${confC}" style="width:${conf}%"></div>
+          <div class="finding-card rounded-2xl border ${card} overflow-hidden bg-white/80 backdrop-blur-md shadow-sm hover:shadow-md transition-all duration-300 fade-in" style="animation-delay:${i*0.05}s">
+            <div class="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
+              <div>
+                <div class="flex items-center gap-2 flex-wrap mb-1">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badge}">${SEV_LABEL[diag.severity] || diag.severity}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full border font-medium ${isCurrent ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-purple-100 text-purple-700 border-purple-200'}">
+                    ${isCurrent ? 'Happening now' : 'Possible future issue'}
+                  </span>
                 </div>
-                <span class="text-xs font-bold">${conf}%</span>
+                <h4 class="font-bold text-sm leading-tight text-slate-800">${diag.issue}</h4>
+                <div class="flex items-center gap-2 mt-2 w-48 sm:w-64">
+                  <span class="text-[10px] opacity-60 font-semibold">AI Confidence:</span>
+                  <div class="flex-1 h-1.5 rounded-full bg-white/80 shadow-inner overflow-hidden">
+                    <div class="h-full rounded-full ${confC}" style="width:${conf}%"></div>
+                  </div>
+                  <span class="text-[10px] font-bold text-slate-700">${conf}%</span>
+                </div>
               </div>
+              <button onclick="toggleDetails('ai-${i}')" class="p-1.5 hover:bg-slate-100 rounded-lg transition-all text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer flex items-center justify-center">
+                <i data-lucide="chevron-down" id="chevron-ai-${i}" class="w-5 h-5 transition-transform duration-200" style="transform: rotate(180deg)"></i>
+              </button>
             </div>
-            <div class="mx-4 mb-3 bg-white/50 rounded-xl p-3 space-y-2 text-xs">
-              <p class="leading-relaxed">${diag.root_cause}</p>
-              <div class="pt-2 border-t border-white/60">
-                <p class="font-bold mb-1 text-xs uppercase tracking-wide opacity-60">What to do</p>
-                <ol class="space-y-1">${stepsHTML}</ol>
+            
+            <div id="details-ai-${i}" class="mx-4 mb-3 mt-2 bg-white/90 rounded-xl p-3.5 border border-slate-100/50 space-y-3 text-xs shadow-inner">
+              <p class="leading-relaxed text-slate-600 font-medium">${diag.root_cause}</p>
+              <div class="pt-3 border-t border-slate-100 flex flex-col gap-2">
+                <div class="flex justify-between items-center">
+                  <p class="font-bold text-slate-400 text-[10px] uppercase tracking-wider">What to do</p>
+                  <button id="copy-btn-ai-${i}" onclick="copyToClipboard('${(diag.recommended_action || '').replace(/'/g, "\\'")}', 'copy-btn-ai-${i}')" class="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-slate-800 transition-colors bg-transparent border-0 cursor-pointer">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span>Copy Actions</span>
+                  </button>
+                </div>
+                <ol class="space-y-1.5 text-slate-700 font-medium">${stepsHTML}</ol>
               </div>
             </div>
           </div>`);
       });
+
       lucide.createIcons();
-      container.scrollTop = 0;
     }
 
-
-    // ─── Render everything from combined diagnoses JSON ─────────────
-    function renderDiagnoses(diagnosesString) {
-      try {
-        let parsed = typeof diagnosesString === 'string' ? JSON.parse(diagnosesString) : diagnosesString;
-        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
-
-        // New combined format
-        if (parsed.rule_diagnoses !== undefined || parsed.ai_diagnoses !== undefined) {
-          renderRuleEngine(parsed.rule_diagnoses || null);
-          renderAIDiagnoses(parsed.ai_diagnoses || null);
-          return;
-        }
-
-        // Legacy format — only AI diagnoses
-        renderRuleEngine(null);
-        renderAIDiagnoses(parsed);
-
-      } catch (err) {
-        console.error('Failed to parse diagnoses:', err);
-        const container = document.getElementById('diagnoses-container');
-        container.innerHTML = `
-          <div class="p-4 bg-red-50 border border-red-200 rounded-xl mb-4 text-red-700 text-sm">Failed to parse diagnostic data. Raw data below:</div>
-          <pre class="bg-slate-800 text-slate-100 p-4 rounded-2xl overflow-x-auto text-xs font-mono">${typeof diagnosesString === 'string' ? diagnosesString.replace(/</g, '&lt;').replace(/>/g, '&gt;') : JSON.stringify(diagnosesString, null, 2)}</pre>`;
+    // ─── Render Table Only ─────────────────────────────────────────
+    function renderTableOnly() {
+      const ruleResult = rawDiagnosesData && rawDiagnosesData.rule_diagnoses;
+      const tbody = document.getElementById('steps-tbody');
+      if (!tbody) return;
+      
+      tbody.innerHTML = '';
+      if (!ruleResult) {
+        tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-slate-500 font-mono">No steps available</td></tr>';
+        return;
       }
+
+      let steps = ruleResult.computation_steps || [];
+
+      // Apply Table Filter
+      if (activeTableFilter === 'TRIGGERED') {
+        steps = steps.filter(step => step.result === 'TRIGGERED');
+      } else if (activeTableFilter === 'PASS') {
+        steps = steps.filter(step => step.result === 'PASS');
+      }
+
+      if (steps.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500 font-mono">No matching steps found</td></tr>`;
+        return;
+      }
+
+      steps.forEach(step => {
+        const color = getRuleStepColor(step.result);
+        const expr  = step.expression || step.reason || '\u2014';
+        const lbl   = step.result === 'TRIGGERED' ? '\u2717 TRIGGERED' : step.result === 'PASS' ? '\u2713 PASS' : '\u2014 SKIP';
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr class="${step.result === 'TRIGGERED' ? 'bg-red-950/20' : 'hover:bg-slate-800/40'} transition-colors">
+            <td class="py-2.5 pr-4 text-slate-300 font-medium">${step.sensor}</td>
+            <td class="py-2.5 pr-4 text-slate-300 font-bold">${step.value}</td>
+            <td class="py-2.5 pr-4 text-slate-500">${step.normal_range}</td>
+            <td class="py-2.5 pr-4 ${color} text-[11px]">${expr}</td>
+            <td class="py-2.5 font-bold ${color}">${lbl}</td>
+          </tr>`);
+      });
     }
 
-    // ─── Toggle computation steps ──────────────────────────────────
+    // ─── Toggle computation steps panel ──────────────────────────
     function toggleComputationSteps() {
       const panel = document.getElementById('computation-steps');
       const chevron = document.getElementById('steps-chevron');
       const btn = document.getElementById('toggle-steps');
+      const filterGroup = document.getElementById('table-filter-group');
       const isHidden = panel.classList.contains('hidden');
+      
       panel.classList.toggle('hidden', !isHidden);
+      if (filterGroup) filterGroup.classList.toggle('hidden', !isHidden);
       chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
       btn.querySelector('span').textContent = isHidden ? 'Hide Algorithm Computation Steps' : 'Show Algorithm Computation Steps';
     }
 
     async function loadAlert() {
       const id = getQueryParam('id');
-      let alertData;
 
       try {
         if (!id) throw new Error('Missing ID');
@@ -494,7 +801,6 @@
         alertData = await res.json();
       } catch (err) {
         console.warn("API fetch failed, utilizing mock data for preview rendering.");
-        // Fallback to mock data so the UI can be previewed without a real backend
         alertData = mockData;
         if(id) alertData.id = id;
       }
@@ -509,7 +815,28 @@
       document.getElementById('meta').innerText = `ID: ${alertData.id} • ${formattedDate}`;
       document.getElementById('summary').innerText = alertData.summary || 'No summary provided.';
       
-      renderDiagnoses(alertData.diagnoses);
+      // Save parsed diagnoses data globally
+      try {
+        let parsed = typeof alertData.diagnoses === 'string' ? JSON.parse(alertData.diagnoses) : alertData.diagnoses;
+        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+
+        if (parsed.rule_diagnoses !== undefined || parsed.ai_diagnoses !== undefined) {
+          rawDiagnosesData = parsed;
+        } else {
+          // Legacy format fallback
+          rawDiagnosesData = {
+            rule_diagnoses: null,
+            ai_diagnoses: parsed
+          };
+        }
+      } catch (err) {
+        console.error('Failed to parse diagnoses:', err);
+        rawDiagnosesData = null;
+      }
+
+      // Calculate counts and render everything
+      updateCounts();
+      renderAllActive();
 
       // Handle custom modal delete confirmation
       confirmBtn.onclick = async () => {
@@ -517,7 +844,6 @@
         confirmBtn.disabled = true;
         
         try {
-          // If the actual fetch fails, we'll still redirect to simulate success in preview mode
           await fetch(`/alerts/${alertData.id}`, { method: 'DELETE' });
         } catch(e) {
           console.log("Delete mocked.");

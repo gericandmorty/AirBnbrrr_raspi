@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request, Response, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -22,6 +23,8 @@ from services.anomaly_reciever import process_anomaly
 from services.auth import get_admin_from_token, verify_password, generate_session, clear_session
 
 app = FastAPI(title="AirBnBrrr")
+
+app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 app.include_router(web_router)
 app.include_router(contacts_router)
