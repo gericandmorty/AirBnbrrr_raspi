@@ -13,11 +13,13 @@
         extend: {
           colors: {
             brand: {
-              50: '#f6fbf8',
-              100: '#e8f5ed',
-              500: '#22c55e',
-              600: '#16a34a',
-              900: '#062b12',
+              50: '#f3fafb',
+              100: '#C1E6EC',
+              500: '#62B6DC',
+              600: '#1E6AA6',
+              700: '#185585',
+              800: '#4b6b80',
+              900: '#0b1d30',
             },
             accent: '#bb2233'
           }
@@ -48,7 +50,7 @@
     .finding-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-      border-color: rgba(16, 185, 129, 0.2);
+      border-color: rgba(30, 106, 166, 0.2);
     }
 
     /* Hide default scrollbars for tabs */
@@ -124,7 +126,7 @@
           <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
             <i data-lucide="search" class="w-4 h-4"></i>
           </span>
-          <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="Search diagnostic issues..." class="pl-9 pr-4 py-2 w-full text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all">
+          <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="Search diagnostic issues..." class="pl-9 pr-4 py-2 w-full text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600/20 transition-all">
         </div>
       </div>
       
@@ -134,8 +136,8 @@
         <!-- PANEL A: Rule Engine -->
         <div>
           <div class="flex items-center gap-2 mb-3 px-1">
-            <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shadow-sm">
-              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+            <div class="w-8 h-8 rounded-lg bg-brand-100 flex items-center justify-center shadow-sm">
+              <i data-lucide="shield-check" class="w-4 h-4 text-brand-600"></i>
             </div>
             <div>
               <h4 class="text-base font-bold text-slate-800">Automatic Safety Checks</h4>
