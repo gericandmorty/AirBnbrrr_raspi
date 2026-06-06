@@ -8,7 +8,7 @@ AirBnBrrr is an end-to-end IoT monitoring and proactive fault detection system d
 *   **Hybrid Diagnostic Pipeline**: A robust, three-layer approach to anomaly detection:
     1.  **Machine Learning (Isolation Forest)**: Analyzes historical data to detect statistical outliers in sensor readings.
     2.  **Deterministic Rule Engine**: A physics-based system that evaluates real-time data against hard-coded engineering thresholds (e.g., compressor overload, undervoltage) to provide verifiable, consistent findings.
-    3.  **Generative AI (LLM)**: Analyzes the context of the triggered anomalies to provide a probabilistic expert opinion on current and potential future failures.
+    3.  **Generative AI (LLM)**: Queries the ultra-fast **Cerebras Inference API** using the **`zai-glm-4.7`** model (customizable via the web UI) to generate contextual diagnoses and forecasting. The backend includes a robust sanitization layer to clean markdown code blocks (```json ... ```) from LLM outputs for reliable JSON parsing.
 *   **Automated SMS Alerts**: Integrates with Traccar SMS Gateway to instantly notify maintenance staff when critical faults are detected.
 *   **Responsive Web Dashboard**: A clean, user-friendly interface built with Tailwind CSS to visualize telemetry data, review detailed anomaly reports side-by-side, and manage system contacts.
 
