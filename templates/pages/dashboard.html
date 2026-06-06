@@ -19,11 +19,13 @@
                 extend: {
                     colors: {
                         brand: {
-                            50: '#f6fbf8',  // Your original --bg
-                            100: '#e2f3e8',
-                            500: '#3b6b52', // Your original --muted
-                            700: '#0b6b2b', // Your original --accent
-                            900: '#062b12', // Your original text color
+                            50: '#f3fafb',  // Ice Mint Tint background
+                            100: '#C1E6EC', // Ice Mint
+                            500: '#4b6b80', // Muted slate blue text
+                            600: '#62B6DC', // Pastel Slate Blue
+                            700: '#1E6AA6', // Deep Cold Blue primary
+                            800: '#185585', // Medium Cold Blue hover
+                            900: '#0b1d30', // Dark Navy text
                         }
                     },
                     fontFamily: {
@@ -47,17 +49,17 @@
         @keyframes pulse-ring {
             0% {
                 transform: scale(0.8);
-                box-shadow: 0 0 0 0 rgba(11, 107, 43, 0.7);
+                box-shadow: 0 0 0 0 rgba(30, 106, 166, 0.7);
             }
 
             70% {
                 transform: scale(1);
-                box-shadow: 0 0 0 6px rgba(11, 107, 43, 0);
+                box-shadow: 0 0 0 6px rgba(30, 106, 166, 0);
             }
 
             100% {
                 transform: scale(0.8);
-                box-shadow: 0 0 0 0 rgba(11, 107, 43, 0);
+                box-shadow: 0 0 0 0 rgba(30, 106, 166, 0);
             }
         }
 
@@ -116,7 +118,7 @@
                 </a>
 
                 <button id="refresh"
-                    class="flex items-center gap-2 text-sm font-medium text-white bg-brand-700 hover:bg-emerald-800 active:bg-brand-900 px-4 py-2 rounded-xl shadow-sm transition-all hover:shadow focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:outline-none">
+                    class="flex items-center gap-2 text-sm font-medium text-white bg-brand-700 hover:bg-brand-800 active:bg-brand-900 px-4 py-2 rounded-xl shadow-sm transition-all hover:shadow focus:ring-2 focus:ring-brand-700 focus:ring-offset-2 focus:outline-none">
                     <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
                     Refresh
                 </button>

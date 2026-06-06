@@ -17,13 +17,13 @@
             },
             colors: {
               brand: {
-                50: '#f6fbf8',
-                100: '#eef7f1',
-                500: '#22c55e',
-                600: '#0b6b2b',
-                700: '#095924',
-                800: '#3b6b52',
-                900: '#062b12',
+                50: '#f3fafb',
+                100: '#C1E6EC',
+                500: '#62B6DC',
+                600: '#1E6AA6',
+                700: '#185585',
+                800: '#4b6b80',
+                900: '#0b1d30',
               }
             }
           }
@@ -264,7 +264,7 @@
             const toast = document.createElement('div');
 
             const colors = type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                ? 'bg-brand-50 text-brand-900 border-brand-100'
                 : 'bg-red-50 text-red-800 border-red-200';
             const icon = type === 'success' ? 'check-circle' : 'alert-circle';
 
@@ -390,7 +390,7 @@
             <label class="sm:hidden text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</label>
             <label class="relative inline-flex items-center cursor-pointer group/toggle" title="Toggle Status">
               <input type="checkbox" class="sr-only peer enable-switch" data-id-enable="${c.id}" ${c.enable ? 'checked' : ''}>
-              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 group-hover/toggle:shadow-sm"></div>
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600 group-hover/toggle:shadow-sm"></div>
             </label>
           </div>
 
