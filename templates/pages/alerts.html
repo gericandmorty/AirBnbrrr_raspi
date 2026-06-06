@@ -92,33 +92,40 @@
       </div>
     </header>
 
-    <!-- Main Card & Table -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="overflow-x-auto custom-scrollbar">
-        <table id="alerts-table" class="w-full text-left border-collapse whitespace-nowrap">
-          <thead>
-            <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
-              <th class="px-6 py-4 font-semibold w-32">Alert ID</th>
-              <th class="px-6 py-4 font-semibold w-48">Timestamp</th>
-              <th class="px-6 py-4 font-semibold w-full min-w-[300px]">Summary</th>
-              <th class="px-6 py-4 font-semibold text-right w-32">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="alerts-tbody" class="divide-y divide-slate-100">
-            <!-- Rows injected by JavaScript -->
-          </tbody>
-        </table>
+    <!-- Alerts Content Wrapper (toggled by JS) -->
+    <div id="alerts-content" class="hidden">
+      <!-- Main Card & Table (Desktop) -->
+      <div id="alerts-desktop-container" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hidden md:block">
+        <div class="overflow-x-auto custom-scrollbar">
+          <table id="alerts-table" class="w-full text-left border-collapse whitespace-nowrap">
+            <thead>
+              <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                <th class="px-6 py-4 font-semibold w-32">Alert ID</th>
+                <th class="px-6 py-4 font-semibold w-48">Timestamp</th>
+                <th class="px-6 py-4 font-semibold w-full min-w-[300px]">Summary</th>
+                <th class="px-6 py-4 font-semibold text-right w-32">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="alerts-tbody" class="divide-y divide-slate-100">
+              <!-- Rows injected by JavaScript -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <!-- Empty State (Hidden by default) -->
-      <div id="empty-state" class="hidden p-16 text-center">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 mb-4">
-          <i data-lucide="shield-check" class="w-8 h-8 text-emerald-600"></i>
-        </div>
-        <h3 class="text-xl font-semibold text-slate-900">All Clear</h3>
-        <p class="text-slate-500 mt-2 max-w-sm mx-auto">No anomalies detected at this time. The system is operating
-          normally.</p>
+      <!-- Mobile Cards View -->
+      <div id="alerts-mobile-list" class="space-y-4 md:hidden">
+        <!-- Cards injected by JavaScript -->
       </div>
+    </div>
+
+    <!-- Empty State (Hidden by default) -->
+    <div id="empty-state" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-16 text-center">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 mb-4">
+        <i data-lucide="shield-check" class="w-8 h-8 text-emerald-600"></i>
+      </div>
+      <h3 class="text-xl font-semibold text-slate-900">All Clear</h3>
+      <p class="text-slate-500 mt-2 max-w-sm mx-auto">No anomalies detected at this time. The system is operating normally.</p>
     </div>
   </div>
 
@@ -196,27 +203,30 @@
 
     function renderAlerts() {
       const tbody = document.getElementById('alerts-tbody');
-      const table = document.getElementById('alerts-table');
+      const alertsContent = document.getElementById('alerts-content');
+      const mobileList = document.getElementById('alerts-mobile-list');
       const emptyState = document.getElementById('empty-state');
 
       tbody.innerHTML = '';
+      mobileList.innerHTML = '';
 
       if (currentAlerts.length === 0) {
-        table.parentElement.classList.add('hidden');
+        alertsContent.classList.add('hidden');
         emptyState.classList.remove('hidden');
         return;
       }
 
-      table.parentElement.classList.remove('hidden');
+      alertsContent.classList.remove('hidden');
       emptyState.classList.add('hidden');
 
       currentAlerts.forEach(a => {
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50/80 transition-colors group';
-
         // Sanitize summary to prevent XSS
         const safeSummary = (a.summary || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const formattedTime = formatTimestampPlus8Hours(a.timestamp);
 
+        // 1. Desktop Row
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition-colors group';
         tr.innerHTML = `
           <td class="px-6 py-4">
             <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-mono text-xs font-medium">
@@ -226,7 +236,7 @@
           <td class="px-6 py-4 text-sm text-slate-500">
             <div class="flex items-center gap-2">
               <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
-              ${formatTimestampPlus8Hours(a.timestamp)}
+              ${formattedTime}
             </div>
           </td>
           <td class="px-6 py-4 text-sm text-slate-700 whitespace-normal">
@@ -244,6 +254,35 @@
           </td>
         `;
         tbody.appendChild(tr);
+
+        // 2. Mobile Card
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col gap-3';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-mono text-xs font-medium">
+              ID: ${a.id}
+            </span>
+            <div class="flex items-center gap-1.5 text-xs text-slate-500">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
+              ${formattedTime}
+            </div>
+          </div>
+          <div class="text-sm text-slate-700 leading-relaxed break-words whitespace-normal">
+            ${safeSummary}
+          </div>
+          <div class="flex justify-end gap-3 pt-3 border-t border-slate-100 mt-1">
+            <a href="/pages/alert?id=${a.id}" class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-xl transition-colors no-underline">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+              <span>View Details</span>
+            </a>
+            <button class="delete-btn flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold rounded-xl transition-colors border-0 cursor-pointer" data-id="${a.id}">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              <span>Delete</span>
+            </button>
+          </div>
+        `;
+        mobileList.appendChild(card);
       });
 
       // Re-initialize icons for newly added DOM elements
