@@ -671,6 +671,22 @@ FastAPI (main.py)
 
 ---
 
+## Layer 3: AI Diagnostic Reasoning Engine
+
+When the Isolation Forest flags an anomaly, and after the Rule Engine performs its checks, Layer 3 (AI / LLM) is triggered in the background.
+
+### API Integration & Platform
+* **Provider**: **Cerebras Inference** (an ultra-fast hardware-accelerated inference API compatible with the OpenAI format).
+* **Default Model**: **`zai-glm-4.7`** (a highly capable reasoning model configured to identify electrical/mechanical anomalies and suggest diagnostic paths).
+* **Customization**: The API endpoint, model, and API Key are fully customizable via the **AI Setup** page on the dashboard and stored in the database.
+
+### Sanitization and Parsing Layer
+Since LLMs often return output wrapped in Markdown formatting (e.g. ```` ```json ... ``` ````), a dedicated sanitization parser was introduced to prevent JSON load failures:
+1. **Backend Sanitization ([services/anomaly_reciever.py](file:///home/gericmorit/Desktop/Projects/client/main/raspi/services/anomaly_reciever.py))**: Strips any markdown fences and extracts the raw JSON string between the outermost `{` and `}` braces before storing the payload.
+2. **Frontend Sanitization ([alert.html](file:///home/gericmorit/Desktop/Projects/client/main/raspi/templates/pages/alert.html))**: Employs an matching JS function `cleanAndParseJSON()` as a fallback to ensure historical or unparsed outputs saved in the database render correctly in the browser without UI breakage.
+
+---
+
 ## Testing: Injecting a Simulated Anomaly
 
 The file `send_mock_anomaly.py` sends a test telemetry reading with all sensors in an out-of-range state to verify the full pipeline:
