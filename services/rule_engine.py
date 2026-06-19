@@ -334,6 +334,290 @@ RULES = [
             },
         ],
     },
+
+    # ── COMPRESSOR SUCTION PRESSURE ──────────────────────────────
+    {
+        "sensor":      "compressor_suction_pressure",
+        "label":       "Compressor Suction Pressure (MPa)",
+        "unit":        "MPa",
+        "normal_min":  0.30,
+        "normal_max":  0.60,
+        "checks": [
+            {
+                "condition": lambda v: v > 0.60,
+                "computed":  lambda v: f"{v:.2f} MPa > 0.60 MPa threshold",
+                "issue":     "High Compressor Suction Pressure",
+                "severity":  "Medium",
+                "status":    "Current",
+                "root_cause": (
+                    "High suction pressure indicates high heat load on the evaporator "
+                    "or an inefficient compressor (leaking valves/seals)."
+                ),
+                "recommended_action": (
+                    "1. Inspect return air filter and evaporator fan. "
+                    "2. Have a technician check compressor valve efficiency."
+                )
+            },
+            {
+                "condition": lambda v: v < 0.30,
+                "computed":  lambda v: f"{v:.2f} MPa < 0.30 MPa threshold",
+                "issue":     "Low Compressor Suction Pressure",
+                "severity":  "High",
+                "status":    "Current",
+                "root_cause": (
+                    "Low suction pressure indicates low refrigerant charge or restricted "
+                    "suction line/airflow over the evaporator (coil freezing)."
+                ),
+                "recommended_action": (
+                    "1. Check refrigerant charge. 2. Verify expansion valve/metering device flow. "
+                    "3. Inspect evaporator coil for frost/ice."
+                )
+            }
+        ]
+    },
+
+    # ── COMPRESSOR DISCHARGE PRESSURE ────────────────────────────
+    {
+        "sensor":      "compressor_discharge_pressure",
+        "label":       "Compressor Discharge Pressure (MPa)",
+        "unit":        "MPa",
+        "normal_min":  1.40,
+        "normal_max":  2.20,
+        "checks": [
+            {
+                "condition": lambda v: v > 2.20,
+                "computed":  lambda v: f"{v:.2f} MPa > 2.20 MPa threshold",
+                "issue":     "High Compressor Discharge Pressure (Head Pressure)",
+                "severity":  "High",
+                "status":    "Current",
+                "root_cause": (
+                    "High discharge pressure is caused by restricted cooling water flow, "
+                    "dirty/scaled condenser tubes, or refrigerant overcharge."
+                ),
+                "recommended_action": (
+                    "1. Check cooling water pump and water flow rate. "
+                    "2. Clean/descale condenser tubes. 3. Verify refrigerant charge."
+                )
+            },
+            {
+                "condition": lambda v: v < 1.40,
+                "computed":  lambda v: f"{v:.2f} MPa < 1.40 MPa threshold",
+                "issue":     "Low Compressor Discharge Pressure",
+                "severity":  "Medium",
+                "status":    "Current",
+                "root_cause": (
+                    "Low discharge pressure indicates low refrigerant charge, compressor valve "
+                    "leakage, or extremely cold condenser inlet water."
+                ),
+                "recommended_action": (
+                    "1. Check refrigerant charge. 2. Verify compressor pumping capacity. "
+                    "3. Regulate condenser water bypass."
+                )
+            }
+        ]
+    },
+
+    # ── WATER INLET TEMP ─────────────────────────────────────────
+    {
+        "sensor":      "water_inlet_temp_c",
+        "label":       "Water Inlet Temperature (°C)",
+        "unit":        "°C",
+        "normal_min":  20.0,
+        "normal_max":  35.0,
+        "checks": [
+            {
+                "condition": lambda v: v > 35.0,
+                "computed":  lambda v: f"{v:.1f} °C > 35.0 °C threshold",
+                "issue":     "High Cooling Water Inlet Temperature",
+                "severity":  "High",
+                "status":    "Current",
+                "root_cause": (
+                    "Cooling water entering the condenser is too warm. This restricts the condenser's "
+                    "heat rejection capacity, raising discharge pressure and reducing efficiency."
+                ),
+                "recommended_action": (
+                    "1. Check cooling tower fan and operation. "
+                    "2. Verify cooling tower water level and make-up system."
+                )
+            },
+            {
+                "condition": lambda v: v < 20.0,
+                "computed":  lambda v: f"{v:.1f} °C < 20.0 °C threshold",
+                "issue":     "Low Cooling Water Inlet Temperature",
+                "severity":  "Low",
+                "status":    "Current",
+                "root_cause": (
+                    "Cooling water entering is colder than expected. While this improves efficiency, "
+                    "extremely low temperatures can lead to low discharge pressures."
+                ),
+                "recommended_action": (
+                    "1. Monitor system operations. "
+                    "2. Adjust cooling tower bypass valve if necessary."
+                )
+            }
+        ]
+    },
+
+    # ── WATER OUTLET TEMP ────────────────────────────────────────
+    {
+        "sensor":      "water_outlet_temp_c",
+        "label":       "Water Outlet Temperature (°C)",
+        "unit":        "°C",
+        "normal_min":  21.0,
+        "normal_max":  40.0,
+        "checks": [
+            {
+                "condition": lambda v: v > 40.0,
+                "computed":  lambda v: f"{v:.1f} °C > 40.0 °C threshold",
+                "issue":     "High Cooling Water Outlet Temperature",
+                "severity":  "High",
+                "status":    "Current",
+                "root_cause": (
+                    "Condenser outlet water temperature is dangerously high. This indicates a high "
+                    "condenser heat load combined with insufficient water flow or scaled tubes."
+                ),
+                "recommended_action": (
+                    "1. Increase water flow rate. "
+                    "2. Clean/descale condenser tubes."
+                )
+            }
+        ]
+    },
+
+    # ── COMPRESSOR CURRENT ───────────────────────────────────────
+    {
+        "sensor":      "compressor_amperes",
+        "label":       "Compressor Current (A)",
+        "unit":        "A",
+        "normal_min":  10.0,
+        "normal_max":  45.0,
+        "checks": [
+            {
+                "condition": lambda v: v > 45.0,
+                "computed":  lambda v: f"{v:.1f} A > 45.0 A threshold",
+                "issue":     "Overloaded Compressor Current",
+                "severity":  "Critical",
+                "status":    "Current",
+                "root_cause": (
+                    "Compressor motor current draw exceeds safe limits. This indicates mechanical binding, "
+                    "electrical short, or excessive operating pressures (high head pressure)."
+                ),
+                "recommended_action": (
+                    "1. Check discharge pressure and water cooling flow. "
+                    "2. Verify motor winding insulation resistance. 3. Inspect compressor run capacitor."
+                )
+            },
+            {
+                "condition": lambda v: 0.1 < v < 10.0,
+                "computed":  lambda v: f"{v:.1f} A < 10.0 A threshold",
+                "issue":     "Low Compressor Current (Underload)",
+                "severity":  "Medium",
+                "status":    "Current",
+                "root_cause": (
+                    "Compressor is drawing very low current while running. This suggests the compressor "
+                    "is running underloaded, commonly due to major refrigerant loss."
+                ),
+                "recommended_action": (
+                    "1. Test refrigerant pressures. "
+                    "2. Check for leaks in the coil and fittings."
+                )
+            }
+        ]
+    },
+
+    # ── AC OUTLET TEMPERATURE ────────────────────────────────────
+    {
+        "sensor":      "ac_outlet_temp",
+        "label":       "AC Supply Outlet Temp (°C)",
+        "unit":        "°C",
+        "normal_min":  12.0,
+        "normal_max":  24.0,
+        "checks": [
+            {
+                "condition": lambda v: v > 24.0,
+                "computed":  lambda v: f"{v:.1f} °C > 24.0 °C threshold",
+                "issue":     "Poor Cooling Output / High Supply Temp",
+                "severity":  "High",
+                "status":    "Current",
+                "root_cause": (
+                    "AC supply air temperature is too warm, suggesting the unit is failing to cool the "
+                    "space (compressor issue, low charge, or dirty evaporator)."
+                ),
+                "recommended_action": (
+                    "1. Clean return air filter and evaporator coil. "
+                    "2. Verify compressor is running and pumping."
+                )
+            },
+            {
+                "condition": lambda v: v < 12.0,
+                "computed":  lambda v: f"{v:.1f} °C < 12.0 °C threshold",
+                "issue":     "Extremely Low AC Supply Temp (Freezing Risk)",
+                "severity":  "Medium",
+                "status":    "Current",
+                "root_cause": (
+                    "Supply temperature is very low, indicating the evaporator coil is approaching "
+                    "freezing conditions (restricting air flow or low refrigerant)."
+                ),
+                "recommended_action": (
+                    "1. Clean return filter to improve airflow. "
+                    "2. Verify fan motor speed."
+                )
+            }
+        ]
+    },
+
+    # ── WATER TEMP DIFF ──────────────────────────────────────────
+    {
+        "sensor":      "water_temp_diff",
+        "label":       "Water Heat Exchange Temp Difference (°C)",
+        "unit":        "°C",
+        "normal_min":  0.5,
+        "normal_max":  15.0,
+        "checks": [
+            {
+                "condition": lambda v: v <= 0.2,
+                "computed":  lambda v: f"{v:.1f} °C <= 0.2 °C threshold",
+                "issue":     "Inefficient Heat Exchange (Water Outlet Temp <= Inlet Temp)",
+                "severity":  "High",
+                "status":    "Current",
+                "root_cause": (
+                    "Condenser cooling water temperature difference is close to zero while "
+                    "the compressor is active. This indicates cooling water flow blockage, "
+                    "pump failure, or severe refrigeration cycle fault."
+                ),
+                "recommended_action": (
+                    "1. Check water cooling pump operation. 2. Verify water valves are fully open. "
+                    "3. Inspect refrigerant charge and compressor."
+                )
+            }
+        ]
+    },
+
+    # ── COMPRESSOR PRESSURE DIFFERENTIAL ─────────────────────────
+    {
+        "sensor":      "compressor_pressure_diff",
+        "label":       "Compressor Pressure Differential (MPa)",
+        "unit":        "MPa",
+        "normal_min":  0.5,
+        "normal_max":  2.0,
+        "checks": [
+            {
+                "condition": lambda v: v < 0.3,
+                "computed":  lambda v: f"{v:.2f} MPa < 0.30 MPa threshold",
+                "issue":     "Low Pressure Differential (Discharge - Suction)",
+                "severity":  "High",
+                "status":    "Current",
+                "root_cause": (
+                    "The difference between discharge and suction pressure is unusually low "
+                    "while the compressor is drawing current. This indicates compressor valve leakage, "
+                    "internal bypass, or failing pump mechanical parts."
+                ),
+                "recommended_action": (
+                    "1. Check compressor valves. 2. Test compressor pumping capacity."
+                )
+            }
+        ]
+    }
 ]
 
 
@@ -372,6 +656,43 @@ def analyze_with_rules(telemetry: dict) -> dict:
     Returns:
         dict: Rule engine result payload.
     """
+    # Work on a copy of telemetry to avoid side effects
+    telemetry = dict(telemetry)
+
+    # Calculate virtual sensors for water temperature difference
+    if 'water_inlet_temp_c' in telemetry and 'water_outlet_temp_c' in telemetry:
+        try:
+            in_t = float(telemetry['water_inlet_temp_c'])
+            out_t = float(telemetry['water_outlet_temp_c'])
+            comp_a_str = telemetry.get('compressor_amperes')
+            comp_a = float(comp_a_str) if comp_a_str is not None else 0.0
+            
+            suc_str = str(telemetry.get('compressor_suction_pressure', '')).strip().upper()
+            dis_str = str(telemetry.get('compressor_discharge_pressure', '')).strip().upper()
+            is_off = (suc_str == 'OFF' or dis_str == 'OFF' or comp_a < 1.0)
+            
+            if not is_off and comp_a > 10.0:
+                telemetry['water_temp_diff'] = out_t - in_t
+        except (ValueError, TypeError):
+            pass
+
+    # Calculate virtual sensors for compressor pressure differential
+    if 'compressor_suction_pressure' in telemetry and 'compressor_discharge_pressure' in telemetry:
+        try:
+            suc_p = float(telemetry['compressor_suction_pressure'])
+            dis_p = float(telemetry['compressor_discharge_pressure'])
+            comp_a_str = telemetry.get('compressor_amperes')
+            comp_a = float(comp_a_str) if comp_a_str is not None else 0.0
+            
+            suc_str = str(telemetry.get('compressor_suction_pressure', '')).strip().upper()
+            dis_str = str(telemetry.get('compressor_discharge_pressure', '')).strip().upper()
+            is_off = (suc_str == 'OFF' or dis_str == 'OFF' or comp_a < 1.0)
+            
+            if not is_off and comp_a > 5.0:
+                telemetry['compressor_pressure_diff'] = dis_p - suc_p
+        except (ValueError, TypeError):
+            pass
+
     findings = []
     computation_steps = []
     severity_rank = {"Low": 1, "Medium": 2, "High": 3, "Critical": 4}

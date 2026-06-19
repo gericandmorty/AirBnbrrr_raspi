@@ -33,7 +33,14 @@ def format_for_sms(api_response_string):
         
         # Take just the first sentence of the recommended action to save space
         action_full = issue.get("recommended_action", "Inspect unit.")
-        action_short = action_full.split(". ")[0] + "." 
+        parts = [p.strip() for p in action_full.split(". ") if p.strip()]
+        if parts:
+            if parts[0].isdigit() and len(parts) > 1:
+                action_short = f"{parts[0]}. {parts[1]}."
+            else:
+                action_short = f"{parts[0]}."
+        else:
+            action_short = "Inspect unit."
         
         sms_message += f"\n[{severity}] {title}\nAction: {action_short}\n"
 
