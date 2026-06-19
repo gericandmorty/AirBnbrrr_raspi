@@ -555,7 +555,62 @@ Monitors dust levels inside the air intake.
 * **Checks**:
   * **Over 300 (Low Severity)**: The air filter is dirty and clogged, restricting airflow. This causes the AC to work harder and reduces cooling capacity.
 
+
+### 9. Compressor Suction Pressure (`compressor_suction_pressure`)
+Monitors the low-pressure side of the refrigeration cycle.
+* **Normal Range**: 0.30 MPa to 0.60 MPa.
+* **Checks**:
+  * **Over 0.60 MPa (Medium Severity)**: Suggests high heat load or compressor pumping inefficiency (valves leaking).
+  * **Under 0.30 MPa (High Severity)**: Indicates low refrigerant charge (leaks) or a frozen evaporator coil restricting suction pressure.
+
+### 10. Compressor Discharge Pressure (`compressor_discharge_pressure`)
+Monitors the high-pressure side of the refrigeration cycle.
+* **Normal Range**: 1.40 MPa to 2.20 MPa.
+* **Checks**:
+  * **Over 2.20 MPa (High Severity)**: High head pressure. Commonly caused by restricted cooling water flow, dirty condenser tubes, or refrigerant overcharge.
+  * **Under 1.40 MPa (Medium Severity)**: Low head pressure. Suggests low refrigerant or leaking compressor valves.
+
+### 11. Water Inlet Temperature (`water_inlet_temp_c`)
+Monitors the cooling water entering the condenser from the cooling tower.
+* **Normal Range**: 20.0 °C to 35.0 °C.
+* **Checks**:
+  * **Over 35.0 °C (High Severity)**: Cooling water is too warm, restricting heat rejection and reducing AC cooling efficiency.
+  * **Under 20.0 °C (Low Severity)**: Water is unusually cold.
+
+### 12. Water Outlet Temperature (`water_outlet_temp_c`)
+Monitors water leaving the condenser after absorbing heat.
+* **Normal Range**: 21.0 °C to 40.0 °C.
+* **Checks**:
+  * **Over 40.0 °C (High Severity)**: Extremely hot outlet water, indicating insufficient water flow or scaled tubes.
+
+### 13. Compressor Current (`compressor_amperes`)
+Monitors the electrical load drawn by the compressor motor.
+* **Normal Range**: 10.0 A to 45.0 A.
+* **Checks**:
+  * **Over 45.0 A (Critical Severity)**: Electrical overload. Winding burnout risk from motor binding, start/run capacitor degradation, or high discharge pressures.
+  * **Under 10.0 A (Medium Severity)**: Compressor underloaded, typically due to total refrigerant loss (compressor is spinning without vapor to compress).
+
+### 14. AC Supply Outlet Temperature (`ac_outlet_temp`)
+Monitors the cold supply air temperature.
+* **Normal Range**: 12.0 °C to 24.0 °C.
+* **Checks**:
+  * **Over 24.0 °C (High Severity)**: Poor cooling performance.
+  * **Under 12.0 °C (Medium Severity)**: Freezing air supply risk.
+
+### 15. Water Temperature Difference (`water_temp_diff` - Virtual)
+Calculates `water_outlet_temp_c - water_inlet_temp_c` when the compressor is active.
+* **Normal Range**: 0.5 °C to 15.0 °C.
+* **Checks**:
+  * **Under or equal to 0.2 °C (High Severity)**: Close to zero heat rejection, indicating complete cooling water circulation failure or lack of refrigerant heat rejection.
+
+### 16. Compressor Pressure Differential (`compressor_pressure_diff` - Virtual)
+Calculates `compressor_discharge_pressure - compressor_suction_pressure` when the compressor is active.
+* **Normal Range**: 0.5 MPa to 2.0 MPa.
+* **Checks**:
+  * **Under 0.30 MPa (High Severity)**: Lack of pressure split, indicating compressor mechanical damage.
+
 ---
+
 
 ## Combined Diagnoses Storage Format
 
@@ -630,7 +685,7 @@ FastAPI (main.py)
             │
             ├─▶ Rule Engine (always runs first)
             │       analyze_with_rules(telemetry)
-            │       Checks all 8 sensor thresholds
+            │       Checks all sensor thresholds (including water-cooled & virtual parameters)
             │       Produces findings + computation_steps
             │
             ├─▶ AI / LLM (runs second)
@@ -709,3 +764,10 @@ python send_mock_anomaly.py
 | `pzem_frequency` | 60.0 Hz | **PASS** — within range |
 
 The script prints the response from the server. The server then processes it in the background, evaluates the rules, asks the AI, stores the alert, and dispatches the SMS.
+
+### Testing Water-Cooled / Chiller Loop Anomalies
+To test the new water-cooled chiller rules, run:
+```bash
+python scripts/test_water_anomaly_inject.py
+```
+This script injects a simulated chiller payload with a low suction pressure, high head pressure, overcurrent, and inefficient heat exchange, evaluates the rules, and directly writes the alert into the Supabase database.

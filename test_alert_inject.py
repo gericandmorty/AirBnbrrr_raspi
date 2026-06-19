@@ -97,7 +97,14 @@ findings = rule_result["findings"]
 high     = [f for f in findings if f["severity"] in ("High", "Critical")]
 lines    = ["[RULE ENGINE] !! AC Diagnostic Alert !!"]
 for f in high[:2]:
-    action_short = f["recommended_action"].split(". ")[0] + "."
+    parts = [p.strip() for p in f["recommended_action"].split(". ") if p.strip()]
+    if parts:
+        if parts[0].isdigit() and len(parts) > 1:
+            action_short = f"{parts[0]}. {parts[1]}."
+        else:
+            action_short = f"{parts[0]}."
+    else:
+        action_short = "Inspect unit."
     lines.append(f"\n[{f['severity'].upper()}] {f['issue']}\nAction: {action_short}")
 lines.append("\n\nCheck full system report for details.")
 summary = "\n".join(lines)
