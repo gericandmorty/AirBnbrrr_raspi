@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from datetime import datetime
 import sys
 import json
 from pathlib import Path
@@ -108,8 +109,8 @@ def inject_mock_anomaly():
     cur = conn.cursor()
     
     cur.execute(
-        "INSERT INTO alerts (summary, diagnoses) VALUES (%s, %s) RETURNING id, timestamp::text",
-        (summary_text, combined_payload)
+        "INSERT INTO alerts (timestamp, summary, diagnoses) VALUES (%s, %s, %s) RETURNING id, timestamp::text",
+        (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), summary_text, combined_payload)
     )
     inserted = cur.fetchone()
     conn.commit()

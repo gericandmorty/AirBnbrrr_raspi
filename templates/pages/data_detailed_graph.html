@@ -720,7 +720,7 @@
 
             for (let t = startTime.getTime(); t <= now.getTime(); t += timeStep) {
                 currentVal += (Math.random() - 0.48) * (currentVal * 0.05);
-                let ts = new Date(t + 8 * 60 * 60 * 1000); // 8 hours added
+                let ts = new Date(t);
                 points.push({ x: ts.getTime(), y: Math.max(0, currentVal) }); // Use x/y format for timeseries
             }
             return points;
@@ -745,12 +745,17 @@
 
                     let points = [];
                     for (const r of rows) {
-                        let ts = null;
                         try {
                             if (typeof r.timestamp === 'string') {
-                                const t1 = r.timestamp.replace(' ', 'T');
+                                let t1 = r.timestamp.trim();
+                                if (t1.includes(' ') && !t1.includes('T')) {
+                                    t1 = t1.replace(' ', 'T');
+                                }
+                                const hasTimeZone = /([+-]\d{2}:?\d{2}|Z)$/i.test(t1);
+                                if (!hasTimeZone) {
+                                    t1 = t1 + "+08:00";
+                                }
                                 ts = new Date(t1);
-                                if (isNaN(ts)) ts = new Date(t1 + 'Z');
                             }
                         } catch (e) { ts = null; }
 
@@ -758,9 +763,6 @@
                         if (v === null || v === undefined) continue;
                         const num = Number(v);
                         if (!isFinite(num) || !ts || isNaN(ts)) continue;
-
-                        // Add 8 hours
-                        ts = new Date(ts.getTime() + 8 * 60 * 60 * 1000);
 
                         // Structure as {x, y} for multi-dataset time scales
                         points.push({ x: ts.getTime(), y: num });

@@ -5,14 +5,17 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
+ENV TZ=Asia/Manila
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Install standard system libraries
+# Install standard system libraries and configure timezone
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    tzdata \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file first to optimize Docker cache layer

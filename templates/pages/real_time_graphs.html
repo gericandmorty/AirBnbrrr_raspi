@@ -155,34 +155,46 @@
         function toPhilippineDateTimeLabel(timestamp) {
             if (!timestamp) return '--';
 
-            let parsed = new Date(timestamp);
-
-            // Handle time-only strings from preview/mock data by attaching today's date.
-            if (Number.isNaN(parsed.getTime()) && typeof timestamp === 'string') {
-                const timeOnly = timestamp.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-                if (timeOnly) {
-                    const now = new Date();
-                    parsed = new Date(
-                        now.getFullYear(),
-                        now.getMonth(),
-                        now.getDate(),
-                        Number(timeOnly[1]),
-                        Number(timeOnly[2]),
-                        Number(timeOnly[3] || '0')
-                    );
+            let parsed;
+            if (typeof timestamp === 'string' && /^\d{1,2}:\d{2}(?::\d{2})?$/.test(timestamp.trim())) {
+                const timeOnly = timestamp.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+                const now = new Date();
+                parsed = new Date(
+                    now.getFullYear(),
+                    now.getMonth(),
+                    now.getDate(),
+                    Number(timeOnly[1]),
+                    Number(timeOnly[2]),
+                    Number(timeOnly[3] || '0')
+                );
+            } else {
+                let tsStr = String(timestamp).trim();
+                if (tsStr.includes(' ') && !tsStr.includes('T')) {
+                    tsStr = tsStr.replace(' ', 'T');
                 }
+                const hasTimeZone = /([+-]\d{2}:?\d{2}|Z)$/i.test(tsStr);
+                if (!hasTimeZone) {
+                    tsStr = tsStr + "+08:00";
+                }
+                parsed = new Date(tsStr);
             }
 
             if (Number.isNaN(parsed.getTime())) return String(timestamp);
 
-            const phTime = new Date(parsed.getTime() + 8 * 60 * 60 * 1000);
-            const yyyy = phTime.getFullYear();
-            const mm = String(phTime.getMonth() + 1).padStart(2, '0');
-            const dd = String(phTime.getDate()).padStart(2, '0');
-            const hh = String(phTime.getHours()).padStart(2, '0');
-            const mi = String(phTime.getMinutes()).padStart(2, '0');
-            const ss = String(phTime.getSeconds()).padStart(2, '0');
-            return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Manila',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            const parts = formatter.formatToParts(parsed);
+            const partMap = {};
+            parts.forEach(p => partMap[p.type] = p.value);
+            return `${partMap.year}-${partMap.month}-${partMap.day} ${partMap.hour}:${partMap.minute}:${partMap.second}`;
         }
 
         // Setup DOM for a chart card
