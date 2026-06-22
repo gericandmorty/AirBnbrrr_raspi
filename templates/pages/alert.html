@@ -808,11 +808,21 @@
       }
 
       // Format timestamp
-      const dateObj = new Date(alertData.timestamp);
-      const formattedDate = isNaN(dateObj) ? alertData.timestamp : dateObj.toLocaleString(undefined, {
+      let tsStr = String(alertData.timestamp || '').trim();
+      if (tsStr.includes(' ') && !tsStr.includes('T')) {
+        tsStr = tsStr.replace(' ', 'T');
+      }
+      const hasTimeZone = /([+-]\d{2}:?\d{2}|Z)$/i.test(tsStr);
+      if (tsStr && !hasTimeZone) {
+        tsStr = tsStr + "+08:00";
+      }
+
+      const dateObj = new Date(tsStr);
+      const formattedDate = isNaN(dateObj) ? alertData.timestamp : new Intl.DateTimeFormat('en-PH', {
+        timeZone: 'Asia/Manila',
         year: 'numeric', month: 'short', day: 'numeric', 
         hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
+      }).format(dateObj);
 
       document.getElementById('meta').innerText = `ID: ${alertData.id} • ${formattedDate}`;
       document.getElementById('summary').innerText = alertData.summary || 'No summary provided.';

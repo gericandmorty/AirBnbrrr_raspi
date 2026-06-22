@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional, List
@@ -46,8 +47,9 @@ def create_alert(payload: AlertIn):
     cur = conn.cursor()
     diagnoses_val = payload.diagnoses
     cur.execute(
-        "INSERT INTO alerts (summary, diagnoses) VALUES (%s, %s) RETURNING id, timestamp::text",
+        "INSERT INTO alerts (timestamp, summary, diagnoses) VALUES (%s, %s, %s) RETURNING id, timestamp::text",
         (
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             payload.summary,
             diagnoses_val,
         ),

@@ -168,14 +168,22 @@
     function formatTimestampPlus8Hours(timestamp) {
       if (!timestamp) return 'N/A';
 
-      const parsedDate = new Date(timestamp);
+      let tsStr = String(timestamp).trim();
+      if (tsStr.includes(' ') && !tsStr.includes('T')) {
+        tsStr = tsStr.replace(' ', 'T');
+      }
+      const hasTimeZone = /([+-]\d{2}:?\d{2}|Z)$/i.test(tsStr);
+      if (!hasTimeZone) {
+        tsStr = tsStr + "+08:00";
+      }
+
+      const parsedDate = new Date(tsStr);
       if (Number.isNaN(parsedDate.getTime())) {
         return timestamp;
       }
 
-      const plus8HoursDate = new Date(parsedDate.getTime() + (8 * 60 * 60 * 1000));
-
       return new Intl.DateTimeFormat('en-PH', {
+        timeZone: 'Asia/Manila',
         year: 'numeric',
         month: 'short',
         day: '2-digit',
@@ -183,7 +191,7 @@
         minute: '2-digit',
         second: '2-digit',
         hour12: true
-      }).format(plus8HoursDate);
+      }).format(parsedDate);
     }
 
     async function fetchAlerts() {

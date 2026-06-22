@@ -147,21 +147,22 @@ def process_telemetry_background(payload_dict: dict):
 		ac_values = get_ac_setup()
 		ac_status = ac_values.get("ac_status", "Not Set")
 		ac_thermostat = ac_values.get("ac_thermostat", "Not Set")
-
 		conn = get_db_connection()
 		cur = conn.cursor()
 		cur.execute(
 			"""
 			INSERT INTO telemetry (
+				timestamp,
 				dust_sensor, dht_temp, dht_humidity, vibration,
 				ds18b20_temp1, ds18b20_temp2,
 				pzem_voltage, pzem_current, pzem_power, pzem_energy,
 				pzem_frequency, pzem_power_factor,
 				ac_status, ac_thermostat
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 			RETURNING id
 			""",
 			(
+				datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
 				payload_dict.get("dust_sensor"),
 				payload_dict.get("dht_temp"),
 				payload_dict.get("dht_humidity"),
