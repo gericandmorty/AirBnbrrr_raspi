@@ -389,6 +389,26 @@
                 </div>
             </div>
             <div id="no-data">No data available for the selected range.</div>
+
+            <!-- Dynamic Data Table Section -->
+            <div id="tableSection" class="mt-8 border-t border-slate-100 pt-6" style="display: none;">
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <i data-lucide="table" class="w-4 h-4 text-slate-500"></i>
+                    Data Points Log
+                </h3>
+                <div class="overflow-x-auto rounded-xl border border-slate-100 custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr id="tableHead" class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                                <th class="px-4 py-3">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-slate-100 whitespace-nowrap text-slate-700">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -961,6 +981,7 @@
             if (totalPoints === 0) {
                 document.getElementById('no-data').style.display = 'block';
                 document.getElementById('chartWrapper').style.display = 'none';
+                document.getElementById('tableSection').style.display = 'none';
                 chart.data.datasets = [];
                 chart.update();
                 updateMetrics({});
@@ -1052,6 +1073,99 @@
 
             // Auto-scroll to latest
             chartWrapper.scrollLeft = chartWrapper.scrollWidth;
+
+            // Render Dynamic Data Table
+            renderDataTable(datasetsData);
+        }
+
+        function renderDataTable(datasetsData) {
+            const tableSection = document.getElementById('tableSection');
+            const tableHead = document.getElementById('tableHead');
+            const tableBody = document.getElementById('tableBody');
+
+            let totalPoints = 0;
+            activeColumns.forEach(col => {
+                totalPoints += (datasetsData[col] || []).length;
+            });
+
+            if (totalPoints === 0) {
+                tableSection.style.display = 'none';
+                return;
+            }
+
+            tableSection.style.display = 'block';
+
+            // Rebuild headers
+            tableHead.innerHTML = '<th class="px-4 py-3 text-left">Timestamp</th>';
+            activeColumns.forEach(col => {
+                const th = document.createElement('th');
+                th.className = 'px-4 py-3 text-left';
+                th.textContent = getMetricLabel(col);
+                tableHead.appendChild(th);
+            });
+
+            // Merge values by timestamp
+            const mergedByTs = {};
+            activeColumns.forEach(col => {
+                const pts = datasetsData[col] || [];
+                pts.forEach(pt => {
+                    if (!mergedByTs[pt.x]) {
+                        mergedByTs[pt.x] = {};
+                    }
+                    mergedByTs[pt.x][col] = pt.y;
+                });
+            });
+
+            // Sort timestamps descending (latest first)
+            const sortedTss = Object.keys(mergedByTs).map(Number).sort((a, b) => b - a);
+
+            tableBody.innerHTML = '';
+            
+            // Limit rendering to 100 rows to prevent DOM performance issues
+            const rowsToRender = sortedTss.slice(0, 100);
+
+            rowsToRender.forEach(ts => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/60 transition-colors duration-150 border-b border-slate-100';
+
+                let tsLabel = '';
+                const dateObj = new Date(ts);
+                if (activeSource === 'historical') {
+                    tsLabel = dateObj.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' });
+                } else {
+                    tsLabel = dateObj.toLocaleString('en-PH', {
+                        timeZone: 'Asia/Manila',
+                        year: 'numeric', month: 'short', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    });
+                }
+
+                let cellsHtml = `<td class="px-4 py-3 font-semibold text-slate-900">${tsLabel}</td>`;
+                activeColumns.forEach(col => {
+                    const val = mergedByTs[ts][col];
+                    if (val === undefined || val === null) {
+                        cellsHtml += `<td class="px-4 py-3 text-slate-400">—</td>`;
+                    } else {
+                        const config = metricConfig[col] || { label: col, unit: '' };
+                        cellsHtml += `<td class="px-4 py-3 font-medium text-slate-800">${val.toLocaleString(undefined, { maximumFractionDigits: 2 })}${config.unit || ''}</td>`;
+                    }
+                });
+
+                tr.innerHTML = cellsHtml;
+                tableBody.appendChild(tr);
+            });
+            
+            if (sortedTss.length > 100) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="${activeColumns.length + 1}" class="px-4 py-3 text-center text-xs text-slate-500 font-semibold italic bg-slate-50/50">
+                    Showing latest 100 of ${sortedTss.length} data points.
+                </td>`;
+                tableBody.appendChild(tr);
+            }
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
         }
 
         document.getElementById('refresh').addEventListener('click', fetchAndRender);
