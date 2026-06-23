@@ -347,15 +347,25 @@
                 <!-- Dynamically injected metric blocks -->
             </div>
 
-            <div class="add-metric-wrapper">
-                <select id="columnSelect">
-                    <option value="" disabled selected>+ Add Metric</option>
-                </select>
-                <button id="refresh" class="btn-primary" style="display:none;">Refresh</button>
+            <div class="add-metric-wrapper flex items-center gap-4">
+                <div class="flex flex-col">
+                    <label for="sourceSelect" class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Data Source</label>
+                    <select id="sourceSelect" class="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-sm font-semibold text-slate-700 outline-none hover:border-slate-300 transition-colors cursor-pointer">
+                        <option value="telemetry">Live Telemetry</option>
+                        <option value="historical">Historical Logs</option>
+                    </select>
+                </div>
+                <div class="flex flex-col">
+                    <label for="columnSelect" class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Metric</label>
+                    <select id="columnSelect" class="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-sm font-semibold text-slate-700 outline-none hover:border-slate-300 transition-colors cursor-pointer">
+                        <option value="" disabled selected>+ Add Metric</option>
+                    </select>
+                </div>
+                <button id="refresh" class="btn-primary self-end" style="display:none;">Refresh</button>
             </div>
         </div>
 
-        <div id="active-pills">
+        <div id="active-pills" class="flex flex-wrap gap-2 mb-6">
             <!-- Dynamically injected metric pills -->
         </div>
 
@@ -383,25 +393,43 @@
     </div>
 
     <script>
-        const columns = [
+        const telemetryColumns = [
             'dust_sensor', 'dht_temp', 'dht_humidity', 'vibration',
             'ds18b20_temp1', 'ds18b20_temp2', 'pzem_voltage', 'pzem_current',
             'pzem_power', 'pzem_energy', 'pzem_frequency', 'pzem_power_factor'
         ];
 
+        const historicalColumns = [
+            'compressor_suction_pressure', 'compressor_discharge_pressure', 'water_inlet_temp_c', 'water_inlet_pressure_mpa',
+            'water_outlet_temp_c', 'water_outlet_pressure_mpa', 'fan_amperes', 'compressor_amperes',
+            'ac_inlet_temp_in', 'ac_inlet_temp_out', 'ac_outlet_temp'
+        ];
+
         const metricConfig = {
-            dust_sensor: { label: 'Air Quality (Dust)' },
-            dht_temp: { label: 'AC Output Temp' },
-            dht_humidity: { label: 'AC Output Humidity' },
-            vibration: { label: 'Compressor Vibration' },
-            ds18b20_temp1: { label: 'Compressor Discharge Line Temp' },
-            ds18b20_temp2: { label: 'Compressor Suction Line Temp' },
-            pzem_voltage: { label: 'Voltage' },
-            pzem_current: { label: 'Current' },
-            pzem_power: { label: 'Active Power' },
-            pzem_energy: { label: 'Total Energy' },
-            pzem_frequency: { label: 'Frequency' },
-            pzem_power_factor: { label: 'Power Factor' }
+            dust_sensor: { label: 'Air Quality (Dust)', unit: ' µg/m³' },
+            dht_temp: { label: 'AC Output Temp', unit: '°C' },
+            dht_humidity: { label: 'AC Output Humidity', unit: '%' },
+            vibration: { label: 'Compressor Vibration', unit: ' Hz' },
+            ds18b20_temp1: { label: 'Compressor Discharge Line Temp', unit: '°C' },
+            ds18b20_temp2: { label: 'Compressor Suction Line Temp', unit: '°C' },
+            pzem_voltage: { label: 'Voltage', unit: ' V' },
+            pzem_current: { label: 'Current', unit: ' A' },
+            pzem_power: { label: 'Active Power', unit: ' W' },
+            pzem_energy: { label: 'Total Energy', unit: ' kWh' },
+            pzem_frequency: { label: 'Frequency', unit: ' Hz' },
+            pzem_power_factor: { label: 'Power Factor', unit: '' },
+
+            compressor_suction_pressure: { label: 'Suction Pressure', unit: ' MPa' },
+            compressor_discharge_pressure: { label: 'Discharge Pressure', unit: ' MPa' },
+            water_inlet_temp_c: { label: 'Water Inlet Temp', unit: '°C' },
+            water_inlet_pressure_mpa: { label: 'Water Inlet Pressure', unit: ' MPa' },
+            water_outlet_temp_c: { label: 'Water Outlet Temp', unit: '°C' },
+            water_outlet_pressure_mpa: { label: 'Water Outlet Pressure', unit: ' MPa' },
+            fan_amperes: { label: 'Fan Current', unit: ' A' },
+            compressor_amperes: { label: 'Compressor Current', unit: ' A' },
+            ac_inlet_temp_in: { label: 'AC Inlet Temp (IN)', unit: '°C' },
+            ac_inlet_temp_out: { label: 'AC Inlet Temp (OUT)', unit: '°C' },
+            ac_outlet_temp: { label: 'AC Outlet Temp', unit: '°C' }
         };
 
         // Distinct colors for multiple metrics
@@ -427,16 +455,24 @@
             ['custom', 'Custom']
         ];
 
-        // Parse URL params for multiple columns
         const urlParams = new URLSearchParams(location.search);
-        const initialColumnsParam = urlParams.get('columns');
+        let activeSource = urlParams.get('source') || 'telemetry';
+        if (activeSource !== 'telemetry' && activeSource !== 'historical') {
+            activeSource = 'telemetry';
+        }
+
+        const sourceSelect = document.getElementById('sourceSelect');
+        sourceSelect.value = activeSource;
+
+        const currentColumns = () => (activeSource === 'historical' ? historicalColumns : telemetryColumns);
 
         let activeColumns = [];
+        const initialColumnsParam = urlParams.get('columns');
         if (initialColumnsParam) {
-            activeColumns = initialColumnsParam.split(',').filter(c => columns.includes(c));
+            activeColumns = initialColumnsParam.split(',').filter(c => currentColumns().includes(c));
         }
         if (activeColumns.length === 0) {
-            activeColumns = ['dust_sensor']; // Default fallback
+            activeColumns = [currentColumns()[0]];
         }
 
         const defaultRange = 'today';
@@ -459,9 +495,10 @@
 
         // Render Dropdown and Pills
         function renderControls() {
+            const cols = currentColumns();
             // Rebuild dropdown (excluding active columns)
             columnSelect.innerHTML = '<option value="" disabled selected>+ Add Metric</option>';
-            columns.forEach(c => {
+            cols.forEach(c => {
                 if (!activeColumns.includes(c)) {
                     const opt = document.createElement('option');
                     opt.value = c;
@@ -500,6 +537,12 @@
             });
         }
 
+        sourceSelect.addEventListener('change', (e) => {
+            activeSource = e.target.value;
+            activeColumns = [currentColumns()[0]];
+            updateUrlAndFetch();
+        });
+
         // Dropdown Add Event
         columnSelect.addEventListener('change', (e) => {
             const selected = e.target.value;
@@ -511,6 +554,7 @@
 
         function updateUrlAndFetch() {
             const p = new URLSearchParams(location.search);
+            p.set('source', activeSource);
             p.set('columns', activeColumns.join(','));
             history.replaceState(null, '', location.pathname + '?' + p.toString());
             renderControls();
@@ -534,9 +578,14 @@
             fetchAndRender();
         }
 
+        function isoNoTZ(d) {
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+
         function computeRangeStartEnd(range) {
-            const now = new Date();
-            function isoNoTZ(d) { return d.toISOString().slice(0, 19); }
+            // For historical logs, relative ranges map onto the maximum month in our database (June 2026) to render beautiful demo data.
+            const now = (activeSource === 'historical') ? new Date('2026-06-30T23:59:59') : new Date();
 
             if (range === 'custom') return {
                 start: customStart.value ? isoNoTZ(new Date(customStart.value)) : null,
@@ -571,7 +620,6 @@
         const ctx = document.getElementById('chart').getContext('2d');
 
         function getGradient(context, chartArea, colorHex) {
-            // Convert hex to rgb for rgba manipulation
             const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(colorHex);
             if (!result) return 'transparent';
             const r = parseInt(result[1], 16);
@@ -608,12 +656,14 @@
                         boxPadding: 6,
                         callbacks: {
                             label: function (context) {
+                                const key = activeColumns[context.datasetIndex] || '';
+                                const config = metricConfig[key] || { label: key, unit: '' };
                                 let label = context.dataset.label || '';
                                 if (label) {
                                     label += ': ';
                                 }
                                 if (context.parsed.y !== null) {
-                                    label += context.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 2 });
+                                    label += context.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 2 }) + (config.unit || '');
                                 }
                                 return label;
                             }
@@ -626,10 +676,10 @@
                         time: {
                             tooltipFormat: 'MMM d, yyyy, h:mm a',
                             displayFormats: {
-                                millisecond: 'MMM d',
-                                second: 'MMM d',
-                                minute: 'MMM d',
-                                hour: 'MMM d',
+                                millisecond: 'h:mm:ss.SSS a',
+                                second: 'h:mm:ss a',
+                                minute: 'h:mm a',
+                                hour: 'h:mm a',
                                 day: 'MMM d',
                                 week: 'MMM d',
                                 month: 'MMM yyyy',
@@ -678,6 +728,7 @@
                 if (points.length === 0) return;
 
                 const color = colorPalette[index % colorPalette.length];
+                const config = metricConfig[col] || { label: col, unit: '' };
 
                 // Assuming data is sorted by time
                 const current = points[points.length - 1].y;
@@ -702,7 +753,7 @@
                         <span style="color: ${color}; font-size: 16px;">●</span> ${getMetricLabel(col)}
                     </div>
                     <div class="top-metric-value">
-                        ${currentStr} ${pctHtml}
+                        ${currentStr}${config.unit || ''} ${pctHtml}
                     </div>
                 `;
                 wrapper.appendChild(block);
@@ -721,9 +772,67 @@
             for (let t = startTime.getTime(); t <= now.getTime(); t += timeStep) {
                 currentVal += (Math.random() - 0.48) * (currentVal * 0.05);
                 let ts = new Date(t);
-                points.push({ x: ts.getTime(), y: Math.max(0, currentVal) }); // Use x/y format for timeseries
+                points.push({ x: ts.getTime(), y: Math.max(0, Number(currentVal.toFixed(2))) }); // Use x/y format for timeseries
             }
             return points;
+        }
+
+        function generateMockHistoricalData(start, end, columnName) {
+            let points = [];
+            let startTime = start ? new Date(start) : new Date('2026-02-01T00:00:00+08:00');
+            let endTime = end ? new Date(end) : new Date('2026-06-30T00:00:00+08:00');
+
+            let currentVal = columnName.includes('temp') ? 22 : (columnName.includes('pressure') ? 1.2 : 15.0);
+
+            for (let t = startTime.getTime(); t <= endTime.getTime(); t += 24 * 3600 * 1000) {
+                const d = new Date(t);
+                const is_off = (d.getDate() % 10 === 0);
+                if (is_off && (columnName.includes('pressure') || columnName.includes('amperes'))) {
+                    continue;
+                }
+                currentVal += (Math.random() - 0.48) * (currentVal * 0.08);
+                if (columnName.includes('pressure')) {
+                    currentVal = Math.max(0.1, Math.min(3.0, currentVal));
+                } else if (columnName.includes('temp')) {
+                    currentVal = Math.max(10.0, Math.min(45.0, currentVal));
+                } else {
+                    currentVal = Math.max(1.0, Math.min(60.0, currentVal));
+                }
+                points.push({ x: t, y: Number(currentVal.toFixed(2)) });
+            }
+            return points;
+        }
+
+        function downsamplePoints(points) {
+            if (points.length === 0) return [];
+            
+            // Group by local Manila date (GMT+8)
+            const groups = {};
+            const localOffsetMs = 8 * 60 * 60 * 1000;
+            
+            for (const pt of points) {
+                const dateKey = new Date(pt.x + localOffsetMs).toISOString().slice(0, 10);
+                if (!groups[dateKey]) {
+                    groups[dateKey] = [];
+                }
+                groups[dateKey].push(pt);
+            }
+            
+            const downsampled = [];
+            // For each day, sample at most 5 points
+            const sortedDates = Object.keys(groups).sort();
+            for (const dateKey of sortedDates) {
+                const dayPts = groups[dateKey];
+                if (dayPts.length <= 5) {
+                    downsampled.push(...dayPts);
+                } else {
+                    for (let i = 0; i < 5; i++) {
+                        const idx = Math.round(i * (dayPts.length - 1) / 4);
+                        downsampled.push(dayPts[idx]);
+                    }
+                }
+            }
+            return downsampled;
         }
 
         async function fetchAndRender() {
@@ -732,69 +841,121 @@
             let maxPointsInDataset = 0;
             let totalPoints = 0;
 
-            try {
-                // Fetch all columns concurrently
-                const fetchPromises = activeColumns.map(async (column) => {
-                    let url = '/telemetry/column?column=' + encodeURIComponent(column);
-                    if (start) url += '&start=' + encodeURIComponent(start);
-                    if (end) url += '&end=' + encodeURIComponent(end);
+            if (activeSource === 'historical') {
+                try {
+                    let url = '/api/historical_data';
+                    let queryParams = [];
+                    if (start) queryParams.push('start=' + encodeURIComponent(start.split('T')[0]));
+                    if (end) queryParams.push('end=' + encodeURIComponent(end.split('T')[0]));
+                    if (queryParams.length > 0) url += '?' + queryParams.join('&');
 
                     const res = await fetch(url);
                     if (!res.ok) throw new Error('Network error');
                     const rows = await res.json();
 
-                    let points = [];
-                    for (const r of rows) {
-                        try {
-                            if (typeof r.timestamp === 'string') {
-                                let t1 = r.timestamp.trim();
-                                if (t1.includes(' ') && !t1.includes('T')) {
-                                    t1 = t1.replace(' ', 'T');
+                    activeColumns.forEach(column => {
+                        let points = [];
+                        for (const r of rows) {
+                            let ts = null;
+                            try {
+                                if (r.date) {
+                                    ts = new Date(r.date + 'T00:00:00+08:00');
                                 }
-                                const hasTimeZone = /([+-]\d{2}:?\d{2}|Z)$/i.test(t1);
-                                if (!hasTimeZone) {
-                                    t1 = t1 + "+08:00";
+                            } catch(e) {}
+                            
+                            const v = r[column];
+                            if (v === null || v === undefined || v === 'OFF') continue;
+                            const num = Number(v);
+                            if (!isFinite(num) || !ts || isNaN(ts)) continue;
+
+                            points.push({ x: ts.getTime(), y: num });
+                        }
+                        points.sort((a, b) => a.x - b.x);
+                        const downsampled = downsamplePoints(points);
+                        datasetsData[column] = downsampled;
+                        totalPoints += downsampled.length;
+                        if (downsampled.length > maxPointsInDataset) {
+                            maxPointsInDataset = downsampled.length;
+                        }
+                    });
+
+                    if (totalPoints === 0) throw new Error("No data returned");
+                } catch (err) {
+                    console.log("Using mock data since backend is empty/unavailable for historical.");
+                    activeColumns.forEach(col => {
+                        const mockPts = generateMockHistoricalData(start, end, col);
+                        const downsampled = downsamplePoints(mockPts);
+                        datasetsData[col] = downsampled;
+                        if (downsampled.length > maxPointsInDataset) {
+                            maxPointsInDataset = downsampled.length;
+                        }
+                        totalPoints += downsampled.length;
+                    });
+                }
+            } else {
+                try {
+                    // Fetch all columns concurrently
+                    const fetchPromises = activeColumns.map(async (column) => {
+                        let url = '/telemetry/column?column=' + encodeURIComponent(column);
+                        if (start) url += '&start=' + encodeURIComponent(start);
+                        if (end) url += '&end=' + encodeURIComponent(end);
+
+                        const res = await fetch(url);
+                        if (!res.ok) throw new Error('Network error');
+                        const rows = await res.json();
+
+                        let points = [];
+                        for (const r of rows) {
+                            let ts = null;
+                            try {
+                                if (typeof r.timestamp === 'string') {
+                                    let t1 = r.timestamp.trim();
+                                    if (t1.includes(' ') && !t1.includes('T')) {
+                                        t1 = t1.replace(' ', 'T');
+                                    }
+                                    if (/([+-]\d{2})$/.test(t1)) {
+                                        t1 = t1 + ":00";
+                                    } else if (!/([+-]\d{2}(:?\d{2})?|Z)$/i.test(t1)) {
+                                        t1 = t1 + "+08:00";
+                                    }
+                                    ts = new Date(t1);
                                 }
-                                ts = new Date(t1);
-                            }
-                        } catch (e) { ts = null; }
+                            } catch (e) { ts = null; }
 
-                        const v = r[column];
-                        if (v === null || v === undefined) continue;
-                        const num = Number(v);
-                        if (!isFinite(num) || !ts || isNaN(ts)) continue;
+                            const v = r[column];
+                            if (v === null || v === undefined) continue;
+                            const num = Number(v);
+                            if (!isFinite(num) || !ts || isNaN(ts)) continue;
 
-                        // Structure as {x, y} for multi-dataset time scales
-                        points.push({ x: ts.getTime(), y: num });
-                    }
+                            points.push({ x: ts.getTime(), y: num });
+                        }
 
-                    // Sort individually just in case
-                    points.sort((a, b) => a.x - b.x);
-                    return { column, points };
-                });
+                        points.sort((a, b) => a.x - b.x);
+                        return { column, points };
+                    });
 
-                const results = await Promise.all(fetchPromises);
-                results.forEach(res => {
-                    datasetsData[res.column] = res.points;
-                    totalPoints += res.points.length;
-                    if (res.points.length > maxPointsInDataset) {
-                        maxPointsInDataset = res.points.length;
-                    }
-                });
+                    const results = await Promise.all(fetchPromises);
+                    results.forEach(res => {
+                        const downsampled = downsamplePoints(res.points);
+                        datasetsData[res.column] = downsampled;
+                        totalPoints += downsampled.length;
+                        if (downsampled.length > maxPointsInDataset) {
+                            maxPointsInDataset = downsampled.length;
+                        }
+                    });
 
-                // If no real data at all, throw to trigger fallback
-                if (totalPoints === 0) throw new Error("No real data found");
-
-            } catch (err) {
-                console.log("Using mock data since backend is unavailable or empty.");
-                activeColumns.forEach(col => {
-                    const mockPts = generateMockData(start, end, col);
-                    datasetsData[col] = mockPts;
-                    if (mockPts.length > maxPointsInDataset) {
-                        maxPointsInDataset = mockPts.length;
-                    }
-                    totalPoints += mockPts.length;
-                });
+                    if (totalPoints === 0) throw new Error("No telemetry data returned");
+                } catch (err) {
+                    console.log("Using mock data since backend is empty/unavailable for telemetry.");
+                    activeColumns.forEach(col => {
+                        const mockPts = generateMockData(start, end, col);
+                        datasetsData[col] = mockPts;
+                        if (mockPts.length > maxPointsInDataset) {
+                            maxPointsInDataset = mockPts.length;
+                        }
+                        totalPoints += mockPts.length;
+                    });
+                }
             }
 
             if (totalPoints === 0) {
@@ -817,13 +978,16 @@
             const chartWrapper = document.getElementById('chartWrapper');
 
             // Width depends on the dataset with the most points
-            const minPixelsPerPoint = 4;
+            const minPixelsPerPoint = activeSource === 'historical' ? 24 : 4;
             const maxSafeWidth = 32000;
+
+            // For longer ranges, fit the chart to the screen so the user can see the macro trend at a glance.
+            const shouldFitScreen = ['last7', 'last28', 'thisMonth', 'lastMonth'].includes(activeRange);
 
             let calculatedWidth = maxPointsInDataset * minPixelsPerPoint;
             calculatedWidth = Math.min(calculatedWidth, maxSafeWidth);
 
-            const finalWidth = Math.max(chartWrapper.clientWidth, calculatedWidth);
+            const finalWidth = shouldFitScreen ? chartWrapper.clientWidth : Math.max(chartWrapper.clientWidth, calculatedWidth);
             chartContainer.style.width = finalWidth + 'px';
 
             chart.options.scales.x.ticks.maxTicksLimit = Math.max(8, Math.floor(finalWidth / 80));
@@ -839,10 +1003,9 @@
 
             if (samplePoints.length > 0) {
                 const timeSpanMs = samplePoints[samplePoints.length - 1].x - samplePoints[0].x;
-                const isTimeRange = ['today', 'yesterday'].includes(activeRange) ||
-                    (activeRange === 'custom' && timeSpanMs <= 48 * 60 * 60 * 1000);
+                const isShortRange = timeSpanMs <= 48 * 60 * 60 * 1000;
 
-                if (isTimeRange) {
+                if (isShortRange && activeSource === 'telemetry') {
                     delete chart.options.scales.x.time.unit;
                 } else {
                     chart.options.scales.x.time.unit = 'day';
@@ -873,9 +1036,9 @@
                         if (!chartArea) return null;
                         return getGradient(ctx, chartArea, color);
                     } : 'transparent',
-                    tension: 0.1,
-                    pointRadius: 0,
-                    pointHoverRadius: 5,
+                    tension: 0.15,
+                    pointRadius: activeSource === 'historical' ? 4 : 0,
+                    pointHoverRadius: 6,
                     pointHoverBackgroundColor: '#fff',
                     pointHoverBorderColor: color,
                     pointHoverBorderWidth: 2,
