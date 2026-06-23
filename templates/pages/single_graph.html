@@ -348,8 +348,9 @@
                             if (t1.includes(' ') && !t1.includes('T')) {
                                 t1 = t1.replace(' ', 'T');
                             }
-                            const hasTimeZone = /([+-]\d{2}:?\d{2}|Z)$/i.test(t1);
-                            if (!hasTimeZone) {
+                            if (/([+-]\d{2})$/.test(t1)) {
+                                t1 = t1 + ":00";
+                            } else if (!/([+-]\d{2}(:?\d{2})?|Z)$/i.test(t1)) {
                                 t1 = t1 + "+08:00";
                             }
                             ts = new Date(t1);

@@ -172,8 +172,9 @@
       if (tsStr.includes(' ') && !tsStr.includes('T')) {
         tsStr = tsStr.replace(' ', 'T');
       }
-      const hasTimeZone = /([+-]\d{2}:?\d{2}|Z)$/i.test(tsStr);
-      if (!hasTimeZone) {
+      if (/([+-]\d{2})$/.test(tsStr)) {
+        tsStr = tsStr + ":00";
+      } else if (!/([+-]\d{2}(:?\d{2})?|Z)$/i.test(tsStr)) {
         tsStr = tsStr + "+08:00";
       }
 

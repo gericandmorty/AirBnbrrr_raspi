@@ -320,6 +320,35 @@ def latest_telemetry():
 	return dict(row)
 
 
+@app.get("/api/historical_data")
+def get_historical_data(start: Optional[str] = None, end: Optional[str] = None):
+	conn = get_db_connection()
+	cur = conn.cursor()
+	query = "SELECT * FROM historical_data"
+	clauses = []
+	params = []
+	if start:
+		clauses.append("date >= %s")
+		params.append(start)
+	if end:
+		clauses.append("date <= %s")
+		params.append(end)
+	if clauses:
+		query += " WHERE " + " AND ".join(clauses)
+	query += " ORDER BY date ASC"
+	cur.execute(query, params)
+	rows = cur.fetchall()
+	conn.close()
+
+	result = []
+	for r in rows:
+		d = dict(r)
+		if d.get("date") and not isinstance(d["date"], str):
+			d["date"] = d["date"].strftime("%Y-%m-%d")
+		result.append(d)
+	return result
+
+
 @app.get("/ac_setup")
 def read_ac_setup():
 	return get_ac_setup()
