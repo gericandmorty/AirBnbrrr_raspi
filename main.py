@@ -224,6 +224,20 @@ def receive_telemetry(payload: Telemetry, background_tasks: BackgroundTasks):
 	return {"status": "stored"}
 
 
+def get_year_month_day(timestamp):
+	if isinstance(timestamp, datetime):
+		return timestamp.year, timestamp.month, timestamp.day
+	elif isinstance(timestamp, str):
+		try:
+			dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+			return dt.year, dt.month, dt.day
+		except Exception:
+			return int(timestamp[:4]), int(timestamp[5:7]), int(timestamp[8:10])
+	else:
+		now = datetime.now()
+		return now.year, now.month, now.day
+
+
 @app.get("/telemetry")
 def get_telemetry(start: Optional[str] = None, end: Optional[str] = None):
 	# Validate and normalize incoming date strings to SQLite 'YYYY-MM-DD HH:MM:SS'
@@ -255,8 +269,32 @@ def get_telemetry(start: Optional[str] = None, end: Optional[str] = None):
 	query += " ORDER BY id ASC"
 	cur.execute(query, params)
 	rows = cur.fetchall()
+
+	results = []
+	if rows:
+		ymd_pairs = set()
+		for r in rows:
+			ymd_pairs.add(get_year_month_day(r["timestamp"]))
+		
+		starts = {}
+		for y, m, d in ymd_pairs:
+			start_str = f"{y:04d}-{m:02d}-{d:02d} 00:00:00"
+			cur.execute(
+				"SELECT pzem_energy FROM telemetry WHERE timestamp >= %s ORDER BY timestamp ASC LIMIT 1",
+				(start_str,)
+			)
+			start_row = cur.fetchone()
+			starts[(y, m, d)] = start_row['pzem_energy'] if (start_row and start_row['pzem_energy'] is not None) else 0.0
+
+		for r in rows:
+			d_dict = dict(r)
+			y, m, d = get_year_month_day(d_dict["timestamp"])
+			e_start = starts.get((y, m, d), 0.0)
+			if d_dict.get("pzem_energy") is not None:
+				d_dict["pzem_energy"] = max(0.0, d_dict["pzem_energy"] - e_start)
+			results.append(d_dict)
 	conn.close()
-	return [dict(r) for r in rows]
+	return results
 
 
 @app.get("/telemetry/column")
@@ -304,8 +342,36 @@ def telemetry_column(column: Optional[str] = None, start: Optional[str] = None, 
 	query += " ORDER BY id ASC"
 	cur.execute(query, params)
 	rows = cur.fetchall()
+
+	results = []
+	if rows:
+		if column == "pzem_energy":
+			ymd_pairs = set()
+			for r in rows:
+				ymd_pairs.add(get_year_month_day(r["timestamp"]))
+			
+			starts = {}
+			for y, m, d in ymd_pairs:
+				start_str = f"{y:04d}-{m:02d}-{d:02d} 00:00:00"
+				cur.execute(
+					"SELECT pzem_energy FROM telemetry WHERE timestamp >= %s ORDER BY timestamp ASC LIMIT 1",
+					(start_str,)
+				)
+				start_row = cur.fetchone()
+				starts[(y, m, d)] = start_row['pzem_energy'] if (start_row and start_row['pzem_energy'] is not None) else 0.0
+			
+			for r in rows:
+				y, m, d = get_year_month_day(r["timestamp"])
+				e_start = starts.get((y, m, d), 0.0)
+				val = r[column]
+				if val is not None:
+					val = max(0.0, val - e_start)
+				results.append({"timestamp": r["timestamp"], column: val})
+		else:
+			for r in rows:
+				results.append({"timestamp": r["timestamp"], column: r[column]})
 	conn.close()
-	return [{"timestamp": r["timestamp"], column: r[column]} for r in rows]
+	return results
 
 
 @app.get("/telemetry/latest")
@@ -314,10 +380,25 @@ def latest_telemetry():
 	cur = conn.cursor()
 	cur.execute("SELECT * FROM telemetry ORDER BY id DESC LIMIT 1")
 	row = cur.fetchone()
-	conn.close()
 	if not row:
+		conn.close()
 		raise HTTPException(status_code=404, detail="No telemetry available")
-	return dict(row)
+	
+	data = dict(row)
+	ts = data.get("timestamp")
+	y, m, d = get_year_month_day(ts)
+	start_str = f"{y:04d}-{m:02d}-{d:02d} 00:00:00"
+	cur.execute(
+		"SELECT pzem_energy FROM telemetry WHERE timestamp >= %s ORDER BY timestamp ASC LIMIT 1",
+		(start_str,)
+	)
+	start_row = cur.fetchone()
+	conn.close()
+	
+	e_start = start_row['pzem_energy'] if (start_row and start_row['pzem_energy'] is not None) else 0.0
+	if data.get("pzem_energy") is not None:
+		data["pzem_energy"] = max(0.0, data["pzem_energy"] - e_start)
+	return data
 
 
 @app.get("/api/historical_data")

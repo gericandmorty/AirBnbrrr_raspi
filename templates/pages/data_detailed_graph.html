@@ -342,6 +342,12 @@
   <!-- Layout Wrapper with Left Sidebar Offset -->
   <div class="lg:pl-64 pt-16 lg:pt-0">
     <div class="container">
+        <div id="mock-warning-banner" class="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 text-sm font-semibold rounded-2xl flex items-center gap-3 shadow-sm" style="display: none;">
+            <div class="p-1.5 bg-amber-100 rounded-lg text-amber-700">
+                <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
+            </div>
+            <span>Simulated data only, Raspberry Pi is turned off.</span>
+        </div>
         <div class="header-controls">
             <div id="metrics-wrapper">
                 <!-- Dynamically injected metric blocks -->
@@ -435,7 +441,7 @@
             pzem_voltage: { label: 'Voltage', unit: ' V' },
             pzem_current: { label: 'Current', unit: ' A' },
             pzem_power: { label: 'Active Power', unit: ' W' },
-            pzem_energy: { label: 'Total Energy', unit: ' kWh' },
+            pzem_energy: { label: 'Daily Energy', unit: ' kWh' },
             pzem_frequency: { label: 'Frequency', unit: ' Hz' },
             pzem_power_factor: { label: 'Power Factor', unit: '' },
 
@@ -856,6 +862,7 @@
         }
 
         async function fetchAndRender() {
+            document.getElementById('mock-warning-banner').style.display = 'none';
             const { start, end } = computeRangeStartEnd(activeRange);
             let datasetsData = {}; // Object to hold data by column name
             let maxPointsInDataset = 0;
@@ -902,6 +909,8 @@
                     if (totalPoints === 0) throw new Error("No data returned");
                 } catch (err) {
                     console.log("Using mock data since backend is empty/unavailable for historical.");
+                    document.getElementById('mock-warning-banner').style.display = 'flex';
+                    if (window.lucide) window.lucide.createIcons();
                     activeColumns.forEach(col => {
                         const mockPts = generateMockHistoricalData(start, end, col);
                         const downsampled = downsamplePoints(mockPts);
@@ -967,6 +976,8 @@
                     if (totalPoints === 0) throw new Error("No telemetry data returned");
                 } catch (err) {
                     console.log("Using mock data since backend is empty/unavailable for telemetry.");
+                    document.getElementById('mock-warning-banner').style.display = 'flex';
+                    if (window.lucide) window.lucide.createIcons();
                     activeColumns.forEach(col => {
                         const mockPts = generateMockData(start, end, col);
                         datasetsData[col] = mockPts;
