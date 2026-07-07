@@ -47,6 +47,7 @@ DB_PATH = Path("telemetry.db")
 
 
 class Telemetry(BaseModel):
+	ac_unit: Optional[str] = None
 	dust_sensor: Optional[float] = None
 	dht_temp: Optional[float] = None
 	dht_humidity: Optional[float] = None
@@ -66,6 +67,8 @@ class Telemetry(BaseModel):
 class ACSetup(BaseModel):
 	ac_status: Optional[str] = None
 	ac_thermostat: Optional[str] = None
+	data_gathering_mode: Optional[str] = None
+	data_gathering_unit: Optional[str] = None
 
 
 @app.on_event("startup")
@@ -147,42 +150,80 @@ def process_telemetry_background(payload_dict: dict):
 		ac_values = get_ac_setup()
 		ac_status = ac_values.get("ac_status", "Not Set")
 		ac_thermostat = ac_values.get("ac_thermostat", "Not Set")
+		data_gathering_mode = ac_values.get("data_gathering_mode", "telemetry")
+		data_gathering_unit = payload_dict.get("ac_unit") or ac_values.get("data_gathering_unit", "AC1")
+
 		conn = get_db_connection()
 		cur = conn.cursor()
-		cur.execute(
-			"""
-			INSERT INTO telemetry (
-				timestamp,
-				dust_sensor, dht_temp, dht_humidity, vibration,
-				ds18b20_temp1, ds18b20_temp2,
-				pzem_voltage, pzem_current, pzem_power, pzem_energy,
-				pzem_frequency, pzem_power_factor,
-				ac_status, ac_thermostat
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-			RETURNING id
-			""",
-			(
-				datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-				payload_dict.get("dust_sensor"),
-				payload_dict.get("dht_temp"),
-				payload_dict.get("dht_humidity"),
-				payload_dict.get("vibration"),
-				payload_dict.get("ds18b20_temp1"),
-				payload_dict.get("ds18b20_temp2"),
-				payload_dict.get("pzem_voltage"),
-				payload_dict.get("pzem_current"),
-				payload_dict.get("pzem_power"),
-				payload_dict.get("pzem_energy"),
-				payload_dict.get("pzem_frequency"),
-				payload_dict.get("pzem_power_factor"),
-				ac_status,
-				ac_thermostat,
-			),
-		)
-		row_id = cur.fetchone()['id']
+		if data_gathering_mode == "data_gathered":
+			cur.execute(
+				"""
+				INSERT INTO data_gathered (
+					timestamp, ac_unit,
+					dust_sensor, dht_temp, dht_humidity, vibration,
+					ds18b20_temp1, ds18b20_temp2,
+					pzem_voltage, pzem_current, pzem_power, pzem_energy,
+					pzem_frequency, pzem_power_factor,
+					ac_status, ac_thermostat
+				) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				RETURNING id
+				""",
+				(
+					datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+					data_gathering_unit,
+					payload_dict.get("dust_sensor"),
+					payload_dict.get("dht_temp"),
+					payload_dict.get("dht_humidity"),
+					payload_dict.get("vibration"),
+					payload_dict.get("ds18b20_temp1"),
+					payload_dict.get("ds18b20_temp2"),
+					payload_dict.get("pzem_voltage"),
+					payload_dict.get("pzem_current"),
+					payload_dict.get("pzem_power"),
+					payload_dict.get("pzem_energy"),
+					payload_dict.get("pzem_frequency"),
+					payload_dict.get("pzem_power_factor"),
+					ac_status,
+					ac_thermostat,
+				),
+			)
+			row_id = cur.fetchone()['id']
+			print(f"\n[BACKGROUND] Telemetry stored in data_gathered table (unit {data_gathering_unit}) with ID {row_id}", flush=True)
+		else:
+			cur.execute(
+				"""
+				INSERT INTO telemetry (
+					timestamp,
+					dust_sensor, dht_temp, dht_humidity, vibration,
+					ds18b20_temp1, ds18b20_temp2,
+					pzem_voltage, pzem_current, pzem_power, pzem_energy,
+					pzem_frequency, pzem_power_factor,
+					ac_status, ac_thermostat
+				) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				RETURNING id
+				""",
+				(
+					datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+					payload_dict.get("dust_sensor"),
+					payload_dict.get("dht_temp"),
+					payload_dict.get("dht_humidity"),
+					payload_dict.get("vibration"),
+					payload_dict.get("ds18b20_temp1"),
+					payload_dict.get("ds18b20_temp2"),
+					payload_dict.get("pzem_voltage"),
+					payload_dict.get("pzem_current"),
+					payload_dict.get("pzem_power"),
+					payload_dict.get("pzem_energy"),
+					payload_dict.get("pzem_frequency"),
+					payload_dict.get("pzem_power_factor"),
+					ac_status,
+					ac_thermostat,
+				),
+			)
+			row_id = cur.fetchone()['id']
+			print(f"\n[BACKGROUND] Telemetry successfully stored with ID {row_id}", flush=True)
 		conn.commit()
 		conn.close()
-		print(f"\n[BACKGROUND] Telemetry successfully stored with ID {row_id}", flush=True)
 	except Exception as db_err:
 		print(f"\n[ERROR] Failed to save telemetry in background: {db_err}", flush=True)
 		return
@@ -430,6 +471,88 @@ def get_historical_data(start: Optional[str] = None, end: Optional[str] = None):
 	return result
 
 
+@app.get("/data_gathered")
+def get_data_gathered(ac_unit: Optional[str] = None):
+	conn = get_db_connection()
+	cur = conn.cursor()
+	if ac_unit:
+		cur.execute("SELECT * FROM data_gathered WHERE ac_unit = %s ORDER BY timestamp DESC LIMIT 200", (ac_unit,))
+	else:
+		cur.execute("SELECT * FROM data_gathered ORDER BY timestamp DESC LIMIT 200")
+	rows = cur.fetchall()
+
+	results = []
+	if rows:
+		ymd_ac_pairs = set()
+		for r in rows:
+			y, m, d = get_year_month_day(r["timestamp"])
+			ymd_ac_pairs.add((y, m, d, r["ac_unit"]))
+
+		starts = {}
+		for y, m, d, ac in ymd_ac_pairs:
+			start_str = f"{y:04d}-{m:02d}-{d:02d} 00:00:00"
+			cur.execute(
+				"SELECT pzem_energy FROM data_gathered WHERE timestamp >= %s AND ac_unit = %s ORDER BY timestamp ASC LIMIT 1",
+				(start_str, ac)
+			)
+			start_row = cur.fetchone()
+			starts[(y, m, d, ac)] = start_row['pzem_energy'] if (start_row and start_row['pzem_energy'] is not None) else 0.0
+
+		for r in rows:
+			d_dict = dict(r)
+			y, m, d = get_year_month_day(d_dict["timestamp"])
+			ac = d_dict["ac_unit"]
+			e_start = starts.get((y, m, d, ac), 0.0)
+			if d_dict.get("pzem_energy") is not None:
+				d_dict["pzem_energy"] = max(0.0, d_dict["pzem_energy"] - e_start)
+			results.append(d_dict)
+	conn.close()
+	return results
+
+
+@app.post("/data_gathered", status_code=201)
+def save_data_gathered(payload: Telemetry):
+	conn = get_db_connection()
+	cur = conn.cursor()
+	payload_dict = payload.dict()
+	ac_unit = payload_dict.get("ac_unit") or "AC1"
+	cur.execute(
+		"""
+		INSERT INTO data_gathered (
+			timestamp, ac_unit,
+			dust_sensor, dht_temp, dht_humidity, vibration,
+			ds18b20_temp1, ds18b20_temp2,
+			pzem_voltage, pzem_current, pzem_power, pzem_energy,
+			pzem_frequency, pzem_power_factor,
+			ac_status, ac_thermostat
+		) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+		RETURNING id
+		""",
+		(
+			datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+			ac_unit,
+			payload_dict.get("dust_sensor"),
+			payload_dict.get("dht_temp"),
+			payload_dict.get("dht_humidity"),
+			payload_dict.get("vibration"),
+			payload_dict.get("ds18b20_temp1"),
+			payload_dict.get("ds18b20_temp2"),
+			payload_dict.get("pzem_voltage"),
+			payload_dict.get("pzem_current"),
+			payload_dict.get("pzem_power"),
+			payload_dict.get("pzem_energy"),
+			payload_dict.get("pzem_frequency"),
+			payload_dict.get("pzem_power_factor"),
+			payload_dict.get("ac_status"),
+			payload_dict.get("ac_thermostat"),
+		)
+	)
+	row_id = cur.fetchone()['id']
+	conn.commit()
+	conn.close()
+	return {"status": "stored", "id": row_id}
+
+
 @app.get("/ac_setup")
 def read_ac_setup():
 	return get_ac_setup()
@@ -437,10 +560,19 @@ def read_ac_setup():
 
 @app.post("/ac_setup")
 def set_ac_setup(payload: ACSetup):
-	ac_status = payload.ac_status if payload.ac_status is not None else "Not Set"
-	ac_thermostat = payload.ac_thermostat if payload.ac_thermostat is not None else "Not Set"
-	update_ac_setup(ac_status, ac_thermostat)
-	return {"status": "updated", "ac_status": ac_status, "ac_thermostat": ac_thermostat}
+	ac_values = get_ac_setup()
+	ac_status = payload.ac_status if payload.ac_status is not None else ac_values.get("ac_status", "Not Set")
+	ac_thermostat = payload.ac_thermostat if payload.ac_thermostat is not None else ac_values.get("ac_thermostat", "Not Set")
+	data_gathering_mode = payload.data_gathering_mode if payload.data_gathering_mode is not None else ac_values.get("data_gathering_mode", "telemetry")
+	data_gathering_unit = payload.data_gathering_unit if payload.data_gathering_unit is not None else ac_values.get("data_gathering_unit", "AC1")
+	update_ac_setup(ac_status, ac_thermostat, data_gathering_mode, data_gathering_unit)
+	return {
+		"status": "updated",
+		"ac_status": ac_status,
+		"ac_thermostat": ac_thermostat,
+		"data_gathering_mode": data_gathering_mode,
+		"data_gathering_unit": data_gathering_unit
+	}
 
 
 def _delayed_shutdown() -> None:
