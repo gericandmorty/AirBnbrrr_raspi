@@ -156,7 +156,7 @@ def process_anomaly(anomaly_data):
         "Voltage (V)": anomaly_data.pop("pzem_voltage", None),
         "Current (A)": anomaly_data.pop("pzem_current", None),
         "Power (W)": anomaly_data.pop("pzem_power", None),
-        "Energy (kWh)": anomaly_data.pop("pzem_energy", None),
+        "Energy (kWh)": (anomaly_data.pop("pzem_energy", None) / 1000.0) if anomaly_data.get("pzem_energy") is not None else None,
         "Frequency (Hz)": anomaly_data.pop("pzem_frequency", None),
         "Power Factor": anomaly_data.pop("pzem_power_factor", None),
         "AC Status": ac_status_to_str(anomaly_data.pop("ac_status", None)),

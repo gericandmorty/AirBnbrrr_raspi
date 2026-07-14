@@ -1,8 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from database import get_db_connection
+
+LOCAL_TZ = timezone(timedelta(hours=8))
 
 router = APIRouter()
 
@@ -49,7 +51,7 @@ def create_alert(payload: AlertIn):
     cur.execute(
         "INSERT INTO alerts (timestamp, summary, diagnoses) VALUES (%s, %s, %s) RETURNING id, timestamp::text",
         (
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S"),
             payload.summary,
             diagnoses_val,
         ),

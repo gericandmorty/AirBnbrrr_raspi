@@ -106,22 +106,24 @@
                 <div id="target-unit-container" class="flex flex-col opacity-50 pointer-events-none transition-all duration-200">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Target AC Unit</span>
                     <select id="targetACSelect" class="bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer">
-                        <option value="AC1">AC1</option>
                         <option value="AC2">AC2</option>
                         <option value="AC3">AC3</option>
                         <option value="AC4">AC4</option>
+                        <option value="AC5">AC5</option>
+                        <option value="AC6">AC6</option>
+                        <option value="AC7">AC7</option>
+                        <option value="AC8">AC8</option>
+                        <option value="AC9">AC9</option>
+                        <option value="AC10">AC10</option>
                     </select>
                 </div>
             </div>
         </div>
 
         <!-- Segmented Toggle Tab Bar (Filter by AC Unit) -->
-        <div class="mb-6 flex flex-wrap gap-2 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm max-w-lg">
+        <div class="mb-6 flex flex-wrap gap-2 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm max-w-3xl">
             <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-bold transition-all border-0 cursor-pointer bg-brand-600 text-white shadow-sm" data-ac="">
                 All Units
-            </button>
-            <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC1">
-                AC1
             </button>
             <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC2">
                 AC2
@@ -131,6 +133,24 @@
             </button>
             <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC4">
                 AC4
+            </button>
+            <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC5">
+                AC5
+            </button>
+            <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC6">
+                AC6
+            </button>
+            <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC7">
+                AC7
+            </button>
+            <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC8">
+                AC8
+            </button>
+            <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC9">
+                AC9
+            </button>
+            <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC10">
+                AC10
             </button>
         </div>
 
@@ -164,6 +184,8 @@
                             <th class="py-4 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs whitespace-nowrap">Current</th>
                             <th class="py-4 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs whitespace-nowrap">Output Temp</th>
                             <th class="py-4 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs whitespace-nowrap">Humidity</th>
+                            <th class="py-4 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs whitespace-nowrap">Outlet Temp</th>
+                            <th class="py-4 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs whitespace-nowrap">Inlet Temp</th>
                             <th class="py-4 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs whitespace-nowrap">Vibration</th>
                             <th class="py-4 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs whitespace-nowrap">Air Quality</th>
                         </tr>
@@ -219,7 +241,7 @@
           const tr = document.createElement('tr');
           tr.className = 'text-center text-slate-400 bg-white';
           tr.innerHTML = `
-              <td colspan="10" class="py-12 px-6">
+              <td colspan="12" class="py-12 px-6">
                   <div class="flex flex-col items-center justify-center gap-2">
                       <i data-lucide="inbox" class="w-8 h-8 text-slate-300"></i>
                       <span class="text-sm font-semibold">${message}</span>
@@ -290,7 +312,7 @@
               tr.innerHTML = `
                   <td class="py-3.5 px-6 font-medium text-slate-800 whitespace-nowrap">${dateStr}</td>
                   <td class="py-3.5 px-6 whitespace-nowrap">
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-100">${r.ac_unit || 'AC1'}</span>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-100">${r.ac_unit || 'AC2'}</span>
                   </td>
                   <td class="py-3.5 px-6 font-semibold text-slate-700 whitespace-nowrap">${nice(r.pzem_power, ' W')}</td>
                   <td class="py-3.5 px-6 font-bold text-emerald-600 whitespace-nowrap">${nice(r.pzem_energy, ' kWh')}</td>
@@ -298,6 +320,8 @@
                   <td class="py-3.5 px-6 font-semibold text-slate-700 whitespace-nowrap">${nice(r.pzem_current, ' A')}</td>
                   <td class="py-3.5 px-6 font-semibold text-slate-700 whitespace-nowrap">${nice(r.dht_temp, ' °C')}</td>
                   <td class="py-3.5 px-6 font-semibold text-slate-700 whitespace-nowrap">${nice(r.dht_humidity, ' %')}</td>
+                  <td class="py-3.5 px-6 font-semibold text-slate-700 whitespace-nowrap">${nice(r.ds18b20_temp1, ' °C')}</td>
+                  <td class="py-3.5 px-6 font-semibold text-slate-700 whitespace-nowrap">${nice(r.ds18b20_temp2, ' °C')}</td>
                   <td class="py-3.5 px-6 font-semibold text-slate-700 whitespace-nowrap">${nice(r.vibration, ' Hz')}</td>
                   <td class="py-3.5 px-6 font-semibold text-slate-700 whitespace-nowrap">${nice(r.dust_sensor, ' µg/m³')}</td>
               `;
@@ -379,7 +403,7 @@
       const targetACSelect = document.getElementById('targetACSelect');
 
       let currentMode = 'telemetry';
-      let lastSelectedUnit = 'AC1';
+      let lastSelectedUnit = 'AC2';
 
       function setDestinationUI(mode) {
           currentMode = mode;
@@ -424,7 +448,7 @@
               const config = await res.json();
               
               const mode = config.data_gathering_mode || 'telemetry';
-              const unit = config.data_gathering_unit || 'AC1';
+              const unit = config.data_gathering_unit || 'AC2';
               
               targetACSelect.value = unit;
               lastSelectedUnit = unit;

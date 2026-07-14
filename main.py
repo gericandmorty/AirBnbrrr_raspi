@@ -3,8 +3,10 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import os
+
+LOCAL_TZ = timezone(timedelta(hours=8))
 from pathlib import Path
 import subprocess
 import threading
@@ -151,7 +153,7 @@ def process_telemetry_background(payload_dict: dict):
 		ac_status = ac_values.get("ac_status", "Not Set")
 		ac_thermostat = ac_values.get("ac_thermostat", "Not Set")
 		data_gathering_mode = ac_values.get("data_gathering_mode", "telemetry")
-		data_gathering_unit = payload_dict.get("ac_unit") or ac_values.get("data_gathering_unit", "AC1")
+		data_gathering_unit = payload_dict.get("ac_unit") or ac_values.get("data_gathering_unit", "AC2")
 
 		conn = get_db_connection()
 		cur = conn.cursor()
@@ -169,7 +171,7 @@ def process_telemetry_background(payload_dict: dict):
 				RETURNING id
 				""",
 				(
-					datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+					datetime.now(LOCAL_TZ),
 					data_gathering_unit,
 					payload_dict.get("dust_sensor"),
 					payload_dict.get("dht_temp"),
@@ -203,7 +205,7 @@ def process_telemetry_background(payload_dict: dict):
 				RETURNING id
 				""",
 				(
-					datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+					datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S"),
 					payload_dict.get("dust_sensor"),
 					payload_dict.get("dht_temp"),
 					payload_dict.get("dht_humidity"),
@@ -275,7 +277,7 @@ def get_year_month_day(timestamp):
 		except Exception:
 			return int(timestamp[:4]), int(timestamp[5:7]), int(timestamp[8:10])
 	else:
-		now = datetime.now()
+		now = datetime.now(LOCAL_TZ)
 		return now.year, now.month, now.day
 
 
@@ -332,7 +334,7 @@ def get_telemetry(start: Optional[str] = None, end: Optional[str] = None):
 			y, m, d = get_year_month_day(d_dict["timestamp"])
 			e_start = starts.get((y, m, d), 0.0)
 			if d_dict.get("pzem_energy") is not None:
-				d_dict["pzem_energy"] = max(0.0, d_dict["pzem_energy"] - e_start)
+				d_dict["pzem_energy"] = max(0.0, (d_dict["pzem_energy"] - e_start) / 1000.0)
 			results.append(d_dict)
 	conn.close()
 	return results
@@ -406,7 +408,7 @@ def telemetry_column(column: Optional[str] = None, start: Optional[str] = None, 
 				e_start = starts.get((y, m, d), 0.0)
 				val = r[column]
 				if val is not None:
-					val = max(0.0, val - e_start)
+					val = max(0.0, (val - e_start) / 1000.0)
 				results.append({"timestamp": r["timestamp"], column: val})
 		else:
 			for r in rows:
@@ -438,7 +440,7 @@ def latest_telemetry():
 	
 	e_start = start_row['pzem_energy'] if (start_row and start_row['pzem_energy'] is not None) else 0.0
 	if data.get("pzem_energy") is not None:
-		data["pzem_energy"] = max(0.0, data["pzem_energy"] - e_start)
+		data["pzem_energy"] = max(0.0, (data["pzem_energy"] - e_start) / 1000.0)
 	return data
 
 
@@ -504,7 +506,7 @@ def get_data_gathered(ac_unit: Optional[str] = None):
 			ac = d_dict["ac_unit"]
 			e_start = starts.get((y, m, d, ac), 0.0)
 			if d_dict.get("pzem_energy") is not None:
-				d_dict["pzem_energy"] = max(0.0, d_dict["pzem_energy"] - e_start)
+				d_dict["pzem_energy"] = max(0.0, (d_dict["pzem_energy"] - e_start) / 1000.0)
 			results.append(d_dict)
 	conn.close()
 	return results
@@ -515,7 +517,7 @@ def save_data_gathered(payload: Telemetry):
 	conn = get_db_connection()
 	cur = conn.cursor()
 	payload_dict = payload.dict()
-	ac_unit = payload_dict.get("ac_unit") or "AC1"
+	ac_unit = payload_dict.get("ac_unit") or "AC2"
 	cur.execute(
 		"""
 		INSERT INTO data_gathered (
@@ -529,7 +531,7 @@ def save_data_gathered(payload: Telemetry):
 		RETURNING id
 		""",
 		(
-			datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+			datetime.now(LOCAL_TZ),
 			ac_unit,
 			payload_dict.get("dust_sensor"),
 			payload_dict.get("dht_temp"),
@@ -564,7 +566,7 @@ def set_ac_setup(payload: ACSetup):
 	ac_status = payload.ac_status if payload.ac_status is not None else ac_values.get("ac_status", "Not Set")
 	ac_thermostat = payload.ac_thermostat if payload.ac_thermostat is not None else ac_values.get("ac_thermostat", "Not Set")
 	data_gathering_mode = payload.data_gathering_mode if payload.data_gathering_mode is not None else ac_values.get("data_gathering_mode", "telemetry")
-	data_gathering_unit = payload.data_gathering_unit if payload.data_gathering_unit is not None else ac_values.get("data_gathering_unit", "AC1")
+	data_gathering_unit = payload.data_gathering_unit if payload.data_gathering_unit is not None else ac_values.get("data_gathering_unit", "AC2")
 	update_ac_setup(ac_status, ac_thermostat, data_gathering_mode, data_gathering_unit)
 	return {
 		"status": "updated",

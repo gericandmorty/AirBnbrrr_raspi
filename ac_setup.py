@@ -11,13 +11,13 @@ def get_ac_setup():
             "ac_status": "Not Set",
             "ac_thermostat": "Not Set",
             "data_gathering_mode": "telemetry",
-            "data_gathering_unit": "AC1"
+            "data_gathering_unit": "AC2"
         }
     return {
         "ac_status": row.get("ac_status", "Not Set"),
         "ac_thermostat": row.get("ac_thermostat", "Not Set"),
         "data_gathering_mode": row.get("data_gathering_mode", "telemetry"),
-        "data_gathering_unit": row.get("data_gathering_unit", "AC1")
+        "data_gathering_unit": row.get("data_gathering_unit", "AC2")
     }
 
 def update_ac_setup(ac_status: str, ac_thermostat: str, data_gathering_mode: str = None, data_gathering_unit: str = None):
