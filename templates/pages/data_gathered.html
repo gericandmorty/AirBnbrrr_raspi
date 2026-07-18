@@ -300,7 +300,16 @@
               tr.className = 'hover:bg-slate-50/50 transition-colors';
               
               // Formatting Date Time
-              const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleString('en-US', {
+              let tsStr = String(r.timestamp || '').trim();
+              if (tsStr && /([+-]\d{2})$/.test(tsStr)) {
+                  tsStr = tsStr + ":00";
+              } else if (tsStr && !/([+-]\d{2}(:?\d{2})?|Z)$/i.test(tsStr)) {
+                  tsStr = tsStr + "+08:00";
+              }
+              const dateObj = tsStr ? new Date(tsStr) : null;
+              const dateStr = (dateObj && !isNaN(dateObj.getTime())) ? dateObj.toLocaleString('en-PH', {
+                  timeZone: 'Asia/Manila',
+                  year: 'numeric',
                   month: 'short',
                   day: 'numeric',
                   hour: '2-digit',

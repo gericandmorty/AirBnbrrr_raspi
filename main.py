@@ -130,7 +130,7 @@ def read_root(request: Request):
 
 
 # Anomaly alert debouncer state
-ALERT_DELAY_SECONDS = float(os.environ.get("ALERT_DELAY_SECONDS", "120.0"))
+ALERT_DELAY_SECONDS = float(os.environ.get("ALERT_DELAY_SECONDS", "480.0"))
 alert_timer = None
 timer_lock = threading.Lock()
 
@@ -138,7 +138,7 @@ def trigger_alert_action(data):
 	global alert_timer
 	with timer_lock:
 		alert_timer = None
-	print(f"\n[DEBOUNCER] 2-minute delay completed. Processing anomaly alert...", flush=True)
+	print(f"\n[DEBOUNCER] 8-minute delay completed. Processing anomaly alert...", flush=True)
 	try:
 		process_anomaly(data)
 	except Exception as e:
