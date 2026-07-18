@@ -130,7 +130,7 @@ def read_root(request: Request):
 
 
 # Anomaly alert debouncer state
-ALERT_DELAY_SECONDS = float(os.environ.get("ALERT_DELAY_SECONDS", "120.0"))
+ALERT_DELAY_SECONDS = float(os.environ.get("ALERT_DELAY_SECONDS", "480.0"))
 alert_timer = None
 timer_lock = threading.Lock()
 
@@ -138,7 +138,7 @@ def trigger_alert_action(data):
 	global alert_timer
 	with timer_lock:
 		alert_timer = None
-	print(f"\n[DEBOUNCER] 2-minute delay completed. Processing anomaly alert...", flush=True)
+	print(f"\n[DEBOUNCER] 8-minute delay completed. Processing anomaly alert...", flush=True)
 	try:
 		process_anomaly(data)
 	except Exception as e:
@@ -478,9 +478,9 @@ def get_data_gathered(ac_unit: Optional[str] = None):
 	conn = get_db_connection()
 	cur = conn.cursor()
 	if ac_unit:
-		cur.execute("SELECT * FROM data_gathered WHERE ac_unit = %s ORDER BY timestamp DESC LIMIT 200", (ac_unit,))
+		cur.execute("SELECT * FROM data_gathered WHERE ac_unit = %s ORDER BY timestamp DESC LIMIT 2000", (ac_unit,))
 	else:
-		cur.execute("SELECT * FROM data_gathered ORDER BY timestamp DESC LIMIT 200")
+		cur.execute("SELECT * FROM data_gathered ORDER BY timestamp DESC LIMIT 2000")
 	rows = cur.fetchall()
 
 	results = []
