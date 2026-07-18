@@ -478,9 +478,9 @@ def get_data_gathered(ac_unit: Optional[str] = None):
 	conn = get_db_connection()
 	cur = conn.cursor()
 	if ac_unit:
-		cur.execute("SELECT * FROM data_gathered WHERE ac_unit = %s ORDER BY timestamp DESC LIMIT 200", (ac_unit,))
+		cur.execute("SELECT * FROM data_gathered WHERE ac_unit = %s ORDER BY timestamp DESC LIMIT 2000", (ac_unit,))
 	else:
-		cur.execute("SELECT * FROM data_gathered ORDER BY timestamp DESC LIMIT 200")
+		cur.execute("SELECT * FROM data_gathered ORDER BY timestamp DESC LIMIT 2000")
 	rows = cur.fetchall()
 
 	results = []
