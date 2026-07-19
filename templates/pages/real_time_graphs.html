@@ -366,7 +366,7 @@
             return [...mockState];
         }
 
-        let activeAC = localStorage.getItem('data_gathered_active_ac') || 'AC2';
+        let activeAC = localStorage.getItem('data_gathered_active_ac') || 'telemetry';
         const acSelector = document.getElementById('ac-selector');
         if (acSelector) {
             acSelector.value = activeAC;

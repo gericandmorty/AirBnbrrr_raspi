@@ -282,7 +282,7 @@ def get_year_month_day(timestamp):
 
 
 @app.get("/telemetry")
-def get_telemetry(start: Optional[str] = None, end: Optional[str] = None, ac_unit: Optional[str] = 'AC2'):
+def get_telemetry(start: Optional[str] = None, end: Optional[str] = None, ac_unit: Optional[str] = 'telemetry'):
 	# Validate and normalize incoming date strings to SQLite 'YYYY-MM-DD HH:MM:SS'
 	start_param = None
 	end_param = None
@@ -361,7 +361,7 @@ def get_telemetry(start: Optional[str] = None, end: Optional[str] = None, ac_uni
 
 
 @app.get("/telemetry/column")
-def telemetry_column(column: Optional[str] = None, start: Optional[str] = None, end: Optional[str] = None, ac_unit: Optional[str] = 'AC2'):
+def telemetry_column(column: Optional[str] = None, start: Optional[str] = None, end: Optional[str] = None, ac_unit: Optional[str] = 'telemetry'):
 	# Return timestamp and the requested column values, optional ISO date range filter
 	if not column:
  		raise HTTPException(status_code=400, detail="Missing 'column' query parameter")
@@ -457,7 +457,7 @@ def telemetry_column(column: Optional[str] = None, start: Optional[str] = None, 
 
 
 @app.get("/telemetry/latest")
-def latest_telemetry(ac_unit: Optional[str] = 'AC2'):
+def latest_telemetry(ac_unit: Optional[str] = 'telemetry'):
 	conn = get_db_connection()
 	cur = conn.cursor()
 	if ac_unit == 'telemetry' or not ac_unit:

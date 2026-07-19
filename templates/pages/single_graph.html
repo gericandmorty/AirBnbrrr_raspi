@@ -234,7 +234,7 @@
         const urlParams = new URLSearchParams(location.search);
         const initialColumn = urlParams.get('columns') || 'dust_sensor';
         const defaultRange = 'thisMonth';
-        let activeAC = localStorage.getItem('data_gathered_active_ac') || 'AC2';
+        let activeAC = localStorage.getItem('data_gathered_active_ac') || 'telemetry';
 
         const acSelector = document.getElementById('ac-selector');
         if (acSelector) {
