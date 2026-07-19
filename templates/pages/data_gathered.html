@@ -175,7 +175,12 @@
                         <span id="unit-status-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"></span>
                     </div>
                 </div>
-                <span id="log-count" class="text-xs font-semibold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">0 entries</span>
+                <div class="flex items-center gap-3">
+                    <select id="date-filter" class="text-xs font-semibold bg-slate-50 text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-200 cursor-pointer">
+                        <option value="all">All Dates</option>
+                    </select>
+                    <span id="log-count" class="text-xs font-semibold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full whitespace-nowrap">0 entries</span>
+                </div>
             </div>
             
             <div class="overflow-x-auto custom-scrollbar">
@@ -247,6 +252,7 @@
   <script>
       let activeAC = ''; // empty string represents "All"
       let allLogs = [];
+      let filteredLogs = [];
       let currentPage = 1;
       const pageSize = 50;
 
@@ -257,6 +263,93 @@
       function nice(v, unit = '') {
           if (v === null || v === undefined) return '—';
           return Number(v).toFixed(2) + unit;
+      }
+
+      function getLocalDateString(timestamp) {
+          if (!timestamp) return '';
+          let tsStr = String(timestamp).trim();
+          if (tsStr && /([+-]\d{2})$/.test(tsStr)) {
+              tsStr = tsStr + ":00";
+          } else if (tsStr && !/([+-]\d{2}(:?\d{2})?|Z)$/i.test(tsStr)) {
+              tsStr = tsStr + "+08:00";
+          }
+          const d = new Date(tsStr);
+          if (isNaN(d.getTime())) return '';
+          return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+      }
+
+      function getFriendlyLocalDateString(timestamp) {
+          if (!timestamp) return '';
+          let tsStr = String(timestamp).trim();
+          if (tsStr && /([+-]\d{2})$/.test(tsStr)) {
+              tsStr = tsStr + ":00";
+          } else if (tsStr && !/([+-]\d{2}(:?\d{2})?|Z)$/i.test(tsStr)) {
+              tsStr = tsStr + "+08:00";
+          }
+          const d = new Date(tsStr);
+          if (isNaN(d.getTime())) return '';
+          return d.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric' });
+      }
+
+      function populateDateFilterOptions() {
+          const select = document.getElementById('date-filter');
+          const currentValue = select.value;
+          
+          select.innerHTML = '<option value="all">All Dates</option>';
+          
+          const datesMap = new Map();
+          allLogs.forEach(r => {
+              const key = getLocalDateString(r.timestamp);
+              if (key && !datesMap.has(key)) {
+                  datesMap.set(key, getFriendlyLocalDateString(r.timestamp));
+              }
+          });
+          
+          const sortedKeys = Array.from(datesMap.keys()).sort().reverse();
+          sortedKeys.forEach(key => {
+              const opt = document.createElement('option');
+              opt.value = key;
+              opt.textContent = datesMap.get(key);
+              select.appendChild(opt);
+          });
+          
+          if (Array.from(select.options).some(o => o.value === currentValue)) {
+              select.value = currentValue;
+          } else {
+              select.value = 'all';
+          }
+      }
+
+      function applyDateFilter() {
+          const select = document.getElementById('date-filter');
+          const filterValue = select.value;
+          
+          if (filterValue === 'all') {
+              filteredLogs = [...allLogs];
+          } else {
+              filteredLogs = allLogs.filter(r => getLocalDateString(r.timestamp) === filterValue);
+          }
+          
+          currentPage = 1;
+          displayCurrentPage();
+      }
+
+      // Render loading state inside table
+      function renderTableLoading() {
+          const tbody = document.getElementById('logs-tbody');
+          tbody.innerHTML = `
+              <tr class="text-center text-slate-400 bg-white">
+                  <td colspan="12" class="py-20 px-6">
+                      <div class="flex flex-col items-center justify-center gap-3">
+                          <svg class="animate-spin h-8 w-8 text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span class="text-sm font-bold text-slate-500 tracking-wide animate-pulse">Loading telemetry logs...</span>
+                      </div>
+                  </td>
+              </tr>
+          `;
       }
 
       // Render empty state inside table
@@ -288,6 +381,8 @@
           const countBadge = document.getElementById('log-count');
           const warningBanner = document.getElementById('no-table-data-warning');
           
+          renderTableLoading();
+          
           let url = '/data_gathered';
           if (activeAC) {
               url += '?ac_unit=' + encodeURIComponent(activeAC);
@@ -301,12 +396,14 @@
               warningBanner.style.display = 'none';
               if (data.length === 0) {
                   allLogs = [];
+                  filteredLogs = [];
+                  populateDateFilterOptions();
                   renderEmptyState('No data logs found. Set the controller destination to Data Gathered to capture active records.');
                   updatePaginationUI();
               } else {
                   allLogs = data;
-                  currentPage = 1;
-                  displayCurrentPage();
+                  populateDateFilterOptions();
+                  applyDateFilter();
               }
           } catch (err) {
               console.error("Failed to query data gathered logs:", err);
@@ -323,7 +420,7 @@
       function displayCurrentPage() {
           const startIdx = (currentPage - 1) * pageSize;
           const endIdx = startIdx + pageSize;
-          const pageRows = allLogs.slice(startIdx, endIdx);
+          const pageRows = filteredLogs.slice(startIdx, endIdx);
           
           renderTable(pageRows);
           updatePaginationUI();
@@ -335,7 +432,7 @@
           const prevBtn = document.getElementById('prev-page-btn');
           const nextBtn = document.getElementById('next-page-btn');
           
-          const totalEntries = allLogs.length;
+          const totalEntries = filteredLogs.length;
           const totalPages = Math.ceil(totalEntries / pageSize) || 1;
           
           const startIdx = totalEntries === 0 ? 0 : (currentPage - 1) * pageSize + 1;
@@ -353,7 +450,7 @@
           const countBadge = document.getElementById('log-count');
           
           tbody.innerHTML = '';
-          countBadge.textContent = `${allLogs.length} entries`;
+          countBadge.textContent = `${filteredLogs.length} entries`;
 
           rows.forEach(r => {
               const tr = document.createElement('tr');
@@ -444,6 +541,7 @@
               // Filter, persist and reload
               activeAC = btn.getAttribute('data-ac');
               localStorage.setItem('data_gathered_active_ac', activeAC);
+              document.getElementById('date-filter').value = 'all';
               updateUnitStatusUI();
               loadLogs();
           });
@@ -611,11 +709,16 @@
       });
 
       document.getElementById('next-page-btn').addEventListener('click', () => {
-          const totalPages = Math.ceil(allLogs.length / pageSize) || 1;
+          const totalPages = Math.ceil(filteredLogs.length / pageSize) || 1;
           if (currentPage < totalPages) {
               currentPage++;
               displayCurrentPage();
           }
+      });
+
+      // Date Filter Change
+      document.getElementById('date-filter').addEventListener('change', () => {
+          applyDateFilter();
       });
 
       // Initial Load
