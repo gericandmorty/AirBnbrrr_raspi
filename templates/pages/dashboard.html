@@ -101,6 +101,23 @@
             <!-- Controls -->
             <div
                 class="flex flex-wrap items-center gap-3 sm:gap-4 bg-white p-2 sm:p-3 rounded-2xl border border-gray-100 shadow-sm">
+                <!-- AC Selector -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Unit:</span>
+                    <select id="ac-selector" class="text-xs font-semibold bg-slate-50 text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-200 cursor-pointer">
+                        <option value="telemetry">Telemetry</option>
+                        <option value="AC2">AC2 (Healthy)</option>
+                        <option value="AC3">AC3 (Compressor Overheat)</option>
+                        <option value="AC4">AC4 (Compressor Overheat)</option>
+                        <option value="AC5">AC5 (Refrigerant Leak)</option>
+                        <option value="AC6">AC6 (Excessive Vibration)</option>
+                        <option value="AC7">AC7 (Evaporator Freezing)</option>
+                        <option value="AC8">AC8 (Healthy)</option>
+                        <option value="AC9">AC9 (Healthy)</option>
+                        <option value="AC10">AC10 (Healthy)</option>
+                    </select>
+                </div>
+                <div class="w-px h-6 bg-gray-200 hidden sm:block"></div>
 
                 <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 border border-slate-100"
                     id="status-container">
@@ -286,22 +303,32 @@
             };
         }
 
+        let activeAC = localStorage.getItem('data_gathered_active_ac') || 'AC2';
+        const acSelector = document.getElementById('ac-selector');
+        if (acSelector) {
+            acSelector.value = activeAC;
+            acSelector.addEventListener('change', (e) => {
+                activeAC = e.target.value;
+                localStorage.setItem('data_gathered_active_ac', activeAC);
+                fetchLatest();
+            });
+        }
+
         // Fetch Data
         async function fetchLatest() {
             const refreshIcon = document.getElementById('refresh-icon');
             refreshIcon.classList.add('animate-spin');
 
             try {
-                const res = await fetch('/telemetry/latest');
+                const res = await fetch(`/telemetry/latest?ac_unit=${encodeURIComponent(activeAC)}`);
                 if (!res.ok) throw new Error('no data');
                 const j = await res.json();
                 updateCards(j);
                 updateStatus('live');
             } catch (err) {
-                // If real endpoint fails, use mock data so the UI looks great in preview mode
-                console.log("Using simulated data for preview.");
-                updateCards(generateMockData());
-                updateStatus('mock');
+                console.error("Failed to load real telemetry:", err);
+                renderEmpty();
+                updateStatus('offline');
             } finally {
                 setTimeout(() => refreshIcon.classList.remove('animate-spin'), 500);
             }

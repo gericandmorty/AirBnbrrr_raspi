@@ -282,7 +282,7 @@ def get_year_month_day(timestamp):
 
 
 @app.get("/telemetry")
-def get_telemetry(start: Optional[str] = None, end: Optional[str] = None):
+def get_telemetry(start: Optional[str] = None, end: Optional[str] = None, ac_unit: Optional[str] = 'AC2'):
 	# Validate and normalize incoming date strings to SQLite 'YYYY-MM-DD HH:MM:SS'
 	start_param = None
 	end_param = None
@@ -298,18 +298,32 @@ def get_telemetry(start: Optional[str] = None, end: Optional[str] = None):
 
 	conn = get_db_connection()
 	cur = conn.cursor()
-	query = "SELECT * FROM telemetry"
-	clauses = []
-	params = []
-	if start_param is not None:
-		clauses.append("timestamp >= %s")
-		params.append(start_param)
-	if end_param is not None:
-		clauses.append("timestamp <= %s")
-		params.append(end_param)
-	if clauses:
-		query += " WHERE " + " AND ".join(clauses)
-	query += " ORDER BY id ASC"
+	if ac_unit == 'telemetry' or not ac_unit:
+		query = "SELECT * FROM telemetry"
+		clauses = []
+		params = []
+		if start_param is not None:
+			clauses.append("timestamp >= %s")
+			params.append(start_param)
+		if end_param is not None:
+			clauses.append("timestamp <= %s")
+			params.append(end_param)
+		if clauses:
+			query += " WHERE " + " AND ".join(clauses)
+		query += " ORDER BY id ASC"
+	else:
+		query = "SELECT * FROM data_gathered"
+		clauses = ["ac_unit = %s"]
+		params = [ac_unit]
+		if start_param is not None:
+			clauses.append("timestamp >= %s")
+			params.append(start_param)
+		if end_param is not None:
+			clauses.append("timestamp <= %s")
+			params.append(end_param)
+		if clauses:
+			query += " WHERE " + " AND ".join(clauses)
+		query += " ORDER BY id ASC"
 	cur.execute(query, params)
 	rows = cur.fetchall()
 
@@ -322,10 +336,16 @@ def get_telemetry(start: Optional[str] = None, end: Optional[str] = None):
 		starts = {}
 		for y, m, d in ymd_pairs:
 			start_str = f"{y:04d}-{m:02d}-{d:02d} 00:00:00"
-			cur.execute(
-				"SELECT pzem_energy FROM telemetry WHERE timestamp >= %s ORDER BY timestamp ASC LIMIT 1",
-				(start_str,)
-			)
+			if ac_unit == 'telemetry' or not ac_unit:
+				cur.execute(
+					"SELECT pzem_energy FROM telemetry WHERE timestamp >= %s ORDER BY timestamp ASC LIMIT 1",
+					(start_str,)
+				)
+			else:
+				cur.execute(
+					"SELECT pzem_energy FROM data_gathered WHERE timestamp >= %s AND ac_unit = %s ORDER BY timestamp ASC LIMIT 1",
+					(start_str, ac_unit)
+				)
 			start_row = cur.fetchone()
 			starts[(y, m, d)] = start_row['pzem_energy'] if (start_row and start_row['pzem_energy'] is not None) else 0.0
 
@@ -341,7 +361,7 @@ def get_telemetry(start: Optional[str] = None, end: Optional[str] = None):
 
 
 @app.get("/telemetry/column")
-def telemetry_column(column: Optional[str] = None, start: Optional[str] = None, end: Optional[str] = None):
+def telemetry_column(column: Optional[str] = None, start: Optional[str] = None, end: Optional[str] = None, ac_unit: Optional[str] = 'AC2'):
 	# Return timestamp and the requested column values, optional ISO date range filter
 	if not column:
  		raise HTTPException(status_code=400, detail="Missing 'column' query parameter")
@@ -370,19 +390,32 @@ def telemetry_column(column: Optional[str] = None, start: Optional[str] = None, 
 
 	conn = get_db_connection()
 	cur = conn.cursor()
-	# column name is safe to interpolate after validation against `allowed`
-	query = f"SELECT timestamp, {column} FROM telemetry"
-	clauses = []
-	params = []
-	if start_param is not None:
-		clauses.append("timestamp >= %s")
-		params.append(start_param)
-	if end_param is not None:
-		clauses.append("timestamp <= %s")
-		params.append(end_param)
-	if clauses:
-		query += " WHERE " + " AND ".join(clauses)
-	query += " ORDER BY id ASC"
+	if ac_unit == 'telemetry' or not ac_unit:
+		query = f"SELECT timestamp, {column} FROM telemetry"
+		clauses = []
+		params = []
+		if start_param is not None:
+			clauses.append("timestamp >= %s")
+			params.append(start_param)
+		if end_param is not None:
+			clauses.append("timestamp <= %s")
+			params.append(end_param)
+		if clauses:
+			query += " WHERE " + " AND ".join(clauses)
+		query += " ORDER BY id ASC"
+	else:
+		query = f"SELECT timestamp, {column} FROM data_gathered"
+		clauses = ["ac_unit = %s"]
+		params = [ac_unit]
+		if start_param is not None:
+			clauses.append("timestamp >= %s")
+			params.append(start_param)
+		if end_param is not None:
+			clauses.append("timestamp <= %s")
+			params.append(end_param)
+		if clauses:
+			query += " WHERE " + " AND ".join(clauses)
+		query += " ORDER BY id ASC"
 	cur.execute(query, params)
 	rows = cur.fetchall()
 
@@ -396,10 +429,16 @@ def telemetry_column(column: Optional[str] = None, start: Optional[str] = None, 
 			starts = {}
 			for y, m, d in ymd_pairs:
 				start_str = f"{y:04d}-{m:02d}-{d:02d} 00:00:00"
-				cur.execute(
-					"SELECT pzem_energy FROM telemetry WHERE timestamp >= %s ORDER BY timestamp ASC LIMIT 1",
-					(start_str,)
-				)
+				if ac_unit == 'telemetry' or not ac_unit:
+					cur.execute(
+						"SELECT pzem_energy FROM telemetry WHERE timestamp >= %s ORDER BY timestamp ASC LIMIT 1",
+						(start_str,)
+					)
+				else:
+					cur.execute(
+						"SELECT pzem_energy FROM data_gathered WHERE timestamp >= %s AND ac_unit = %s ORDER BY timestamp ASC LIMIT 1",
+						(start_str, ac_unit)
+					)
 				start_row = cur.fetchone()
 				starts[(y, m, d)] = start_row['pzem_energy'] if (start_row and start_row['pzem_energy'] is not None) else 0.0
 			
@@ -418,10 +457,13 @@ def telemetry_column(column: Optional[str] = None, start: Optional[str] = None, 
 
 
 @app.get("/telemetry/latest")
-def latest_telemetry():
+def latest_telemetry(ac_unit: Optional[str] = 'AC2'):
 	conn = get_db_connection()
 	cur = conn.cursor()
-	cur.execute("SELECT * FROM telemetry ORDER BY id DESC LIMIT 1")
+	if ac_unit == 'telemetry' or not ac_unit:
+		cur.execute("SELECT * FROM telemetry ORDER BY id DESC LIMIT 1")
+	else:
+		cur.execute("SELECT * FROM data_gathered WHERE ac_unit = %s ORDER BY id DESC LIMIT 1", (ac_unit,))
 	row = cur.fetchone()
 	if not row:
 		conn.close()
@@ -431,10 +473,16 @@ def latest_telemetry():
 	ts = data.get("timestamp")
 	y, m, d = get_year_month_day(ts)
 	start_str = f"{y:04d}-{m:02d}-{d:02d} 00:00:00"
-	cur.execute(
-		"SELECT pzem_energy FROM telemetry WHERE timestamp >= %s ORDER BY timestamp ASC LIMIT 1",
-		(start_str,)
-	)
+	if ac_unit == 'telemetry' or not ac_unit:
+		cur.execute(
+			"SELECT pzem_energy FROM telemetry WHERE timestamp >= %s ORDER BY timestamp ASC LIMIT 1",
+			(start_str,)
+		)
+	else:
+		cur.execute(
+			"SELECT pzem_energy FROM data_gathered WHERE timestamp >= %s AND ac_unit = %s ORDER BY timestamp ASC LIMIT 1",
+			(start_str, ac_unit)
+		)
 	start_row = cur.fetchone()
 	conn.close()
 	
