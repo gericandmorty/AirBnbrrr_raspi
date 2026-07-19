@@ -83,11 +83,16 @@
 
     <!-- Summary Card -->
     <section class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 mb-6 transition-all">
-      <h2 class="text-lg font-semibold text-slate-800 mb-2 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-        Summary
-      </h2>
-      <p id="summary" class="text-slate-600 leading-relaxed">Loading summary...</p>
+      <div class="flex items-center justify-between flex-wrap gap-3 mb-2">
+        <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          Summary
+        </h2>
+        <div id="overall-status-container" class="text-slate-600 font-semibold text-sm">
+          Status: <span id="overall-status-val">Loading...</span>
+        </div>
+      </div>
+      <p id="summary" class="text-slate-600 leading-relaxed font-semibold">Loading summary...</p>
     </section>
 
     <!-- Diagnoses Section -->
@@ -356,6 +361,91 @@
     const getSeverityBadge  = (s) => (SEV_BG[s] || 'bg-slate-500') + ' text-white';
     const getRuleStepColor  = (r) => r === 'TRIGGERED' ? 'text-red-400' : r === 'PASS' ? 'text-emerald-400' : 'text-slate-500';
 
+    function getACConditionStatus(severity, issue, sensorKey) {
+      const iss = (issue || '').toLowerCase();
+      const key = (sensorKey || '').toLowerCase();
+      
+      if (iss.includes('freezing') || iss.includes('filter') || key.includes('dust') || key.includes('dht_humidity')) {
+          return 'Need Cleaning';
+      }
+      if (iss.includes('leak') || iss.includes('refrigerant') || key.includes('temp2')) {
+          return 'Need Repair';
+      }
+      if (iss.includes('overheating') || iss.includes('discharge') || key.includes('temp1')) {
+          return 'Need Maintenance';
+      }
+      if (iss.includes('vibration') || key.includes('vibration')) {
+          return 'Need Maintenance';
+      }
+      if (severity === 'Critical' || severity === 'High') {
+          return 'Need Repair';
+      }
+      if (severity === 'Medium') {
+          return 'Need Maintenance';
+      }
+      return 'Healthy';
+    }
+
+    function getACConditionColorClass(status) {
+      if (status === 'Need Repair') return 'text-red-600 font-extrabold text-sm ml-1';
+      if (status === 'Need Maintenance') return 'text-rose-500 font-extrabold text-sm ml-1';
+      if (status === 'Need Cleaning') return 'text-blue-600 font-extrabold text-sm ml-1';
+      return 'text-emerald-600 font-extrabold text-sm ml-1';
+    }
+
+    function cleanIssueText(text) {
+      if (!text) return '';
+      return text.replace(/\b(on|for|of|at)?\s*AC\d+\b/gi, '').trim();
+    }
+
+    function cleanSummaryText(text) {
+      if (!text) return '';
+      return text.replace(/\b(on|for|of|at)?\s*AC\d+\b/gi, '')
+                 .replace(/Window AC Unit #\d+/gi, 'Air Conditioner')
+                 .replace(/AC unit = 'AC\d+'/gi, 'Air Conditioner')
+                 .replace(/\s+/g, ' ')
+                 .trim();
+    }
+
+    function updateOverallStatusUI() {
+      let overallStatus = 'Healthy';
+      if (rawDiagnosesData) {
+        const ruleResult = rawDiagnosesData.rule_diagnoses;
+        const ruleFindings = (ruleResult && ruleResult.findings) || [];
+        
+        let aiDiagnoses = rawDiagnosesData.ai_diagnoses;
+        if (aiDiagnoses && aiDiagnoses.raw && !aiDiagnoses.diagnoses) {
+          const parsedRaw = cleanAndParseJSON(aiDiagnoses.raw);
+          if (parsedRaw && parsedRaw.diagnoses) aiDiagnoses = parsedRaw;
+        }
+        const aiList = (aiDiagnoses && aiDiagnoses.diagnoses) || [];
+        
+        const statuses = [];
+        ruleFindings.forEach(f => {
+          statuses.push(getACConditionStatus(f.severity, f.issue, f.sensor_key));
+        });
+        aiList.forEach(d => {
+          statuses.push(getACConditionStatus(d.severity, d.issue, ''));
+        });
+        
+        if (statuses.includes('Need Repair')) {
+          overallStatus = 'Need Repair';
+        } else if (statuses.includes('Need Maintenance')) {
+          overallStatus = 'Need Maintenance';
+        } else if (statuses.includes('Need Cleaning')) {
+          overallStatus = 'Need Cleaning';
+        } else if (statuses.length > 0) {
+          overallStatus = statuses[0];
+        }
+      }
+      
+      const valSpan = document.getElementById('overall-status-val');
+      if (valSpan) {
+        valSpan.textContent = overallStatus;
+        valSpan.className = getACConditionColorClass(overallStatus);
+      }
+    }
+
     // ─── Range bar helper ──────────────────────────────────────────
     function buildRangeBar(value, normalRange, unit) {
       const parts = normalRange.replace(unit, '').split('\u2013').map(s => parseFloat(s.trim()));
@@ -593,17 +683,50 @@
             
             <div class="px-4 pb-1">${bar}</div>
             
-            <div id="details-rule-${i}" class="mx-4 mb-3 mt-2 bg-white/90 rounded-xl p-3.5 border border-slate-100/50 space-y-3 text-xs shadow-inner">
-              <p class="leading-relaxed text-slate-600 font-medium">${f.root_cause}</p>
-              <div class="pt-3 border-t border-slate-100 flex flex-col gap-2">
-                <div class="flex justify-between items-center">
-                  <p class="font-bold text-slate-400 text-[10px] uppercase tracking-wider">What to do</p>
-                  <button id="copy-btn-rule-${i}" onclick="copyToClipboard('${f.recommended_action.replace(/'/g, "\\'")}', 'copy-btn-rule-${i}')" class="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-slate-800 transition-colors bg-transparent border-0 cursor-pointer">
-                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                    <span>Copy Actions</span>
-                  </button>
+            <div id="details-rule-${i}" class="mx-4 mb-3 mt-2 bg-white/90 rounded-xl p-4 border border-slate-100/50 space-y-4 text-xs shadow-inner">
+              <!-- 1. AC Condition -->
+              <div class="flex items-start gap-2.5">
+                <div class="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 border border-blue-100">
+                  <i data-lucide="info" class="w-3.5 h-3.5 text-blue-500"></i>
                 </div>
-                <ol class="space-y-1.5 text-slate-700 font-medium">${stepsHTML}</ol>
+                <div>
+                  <h6 class="font-bold text-slate-800 text-[11px] uppercase tracking-wider mb-0.5">1. AC Condition</h6>
+                  <p class="text-slate-600 font-medium leading-relaxed">
+                    Status: <span class="${getACConditionColorClass(getACConditionStatus(f.severity, f.issue, f.sensor_key))}">${getACConditionStatus(f.severity, f.issue, f.sensor_key)}</span>
+                  </p>
+                  <p class="text-[11px] text-slate-500 mt-0.5 font-medium">
+                    Sensor ${info.label} reads <strong>${f.measured_value} ${f.unit}</strong> (Safe range: ${f.normal_range} ${f.unit})
+                  </p>
+                </div>
+              </div>
+
+              <!-- 2. Fault / Anomaly Details -->
+              <div class="flex items-start gap-2.5 pt-3 border-t border-slate-100/50">
+                <div class="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0 border border-red-100">
+                  <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i>
+                </div>
+                <div>
+                  <h6 class="font-bold text-slate-800 text-[11px] uppercase tracking-wider mb-0.5">2. Fault / Anomaly Details</h6>
+                  <p class="text-slate-800 font-bold mb-1">${cleanIssueText(f.issue) || 'Threshold Exceeded'}</p>
+                  <p class="text-slate-500 leading-relaxed">${f.root_cause}</p>
+                </div>
+              </div>
+
+              <!-- 3. Required Maintenance -->
+              <div class="flex items-start gap-2.5 pt-3 border-t border-slate-100/50">
+                <div class="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                  <i data-lucide="wrench" class="w-3.5 h-3.5 text-emerald-600"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex justify-between items-center mb-1">
+                    <h6 class="font-bold text-slate-800 text-[11px] uppercase tracking-wider">3. Required Maintenance</h6>
+                    <button id="copy-btn-rule-${i}" onclick="copyToClipboard('${f.recommended_action.replace(/'/g, "\\'")}', 'copy-btn-rule-${i}')" class="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-slate-800 transition-colors bg-transparent border-0 cursor-pointer">
+                      <i data-lucide="copy" class="w-3 h-3"></i>
+                      <span>Copy Actions</span>
+                    </button>
+                  </div>
+                  <ol class="space-y-1.5 text-slate-700 font-medium pl-0">${stepsHTML}</ol>
+                </div>
               </div>
             </div>
           </div>`);
@@ -703,7 +826,7 @@
                     ${isCurrent ? 'Happening now' : 'Possible future issue'}
                   </span>
                 </div>
-                <h4 class="font-bold text-sm leading-tight text-slate-800">${diag.issue}</h4>
+                <h4 class="font-bold text-sm leading-tight text-slate-800">${cleanIssueText(diag.issue)}</h4>
                 <div class="flex items-center gap-2 mt-2 w-48 sm:w-64">
                   <span class="text-[10px] opacity-60 font-semibold">AI Confidence:</span>
                   <div class="flex-1 h-1.5 rounded-full bg-white/80 shadow-inner overflow-hidden">
@@ -717,17 +840,47 @@
               </button>
             </div>
             
-            <div id="details-ai-${i}" class="mx-4 mb-3 mt-2 bg-white/90 rounded-xl p-3.5 border border-slate-100/50 space-y-3 text-xs shadow-inner">
-              <p class="leading-relaxed text-slate-600 font-medium">${diag.root_cause}</p>
-              <div class="pt-3 border-t border-slate-100 flex flex-col gap-2">
-                <div class="flex justify-between items-center">
-                  <p class="font-bold text-slate-400 text-[10px] uppercase tracking-wider">What to do</p>
-                  <button id="copy-btn-ai-${i}" onclick="copyToClipboard('${(diag.recommended_action || '').replace(/'/g, "\\'")}', 'copy-btn-ai-${i}')" class="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-slate-800 transition-colors bg-transparent border-0 cursor-pointer">
-                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                    <span>Copy Actions</span>
-                  </button>
+            <div id="details-ai-${i}" class="mx-4 mb-3 mt-2 bg-white/90 rounded-xl p-4 border border-slate-100/50 space-y-4 text-xs shadow-inner">
+              <!-- 1. AC Condition -->
+              <div class="flex items-start gap-2.5">
+                <div class="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 border border-blue-100">
+                  <i data-lucide="info" class="w-3.5 h-3.5 text-blue-500"></i>
                 </div>
-                <ol class="space-y-1.5 text-slate-700 font-medium">${stepsHTML}</ol>
+                <div>
+                  <h6 class="font-bold text-slate-800 text-[11px] uppercase tracking-wider mb-0.5">1. AC Condition</h6>
+                  <p class="text-slate-600 font-medium leading-relaxed">
+                    Status: <span class="${getACConditionColorClass(getACConditionStatus(diag.severity, diag.issue, ''))}">${getACConditionStatus(diag.severity, diag.issue, '')}</span>
+                  </p>
+                  <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${diag.root_cause}</p>
+                </div>
+              </div>
+
+              <!-- 2. Fault / Anomaly Details -->
+              <div class="flex items-start gap-2.5 pt-3 border-t border-slate-100/50">
+                <div class="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0 border border-red-100">
+                  <i data-lucide="alert-octagon" class="w-3.5 h-3.5 text-red-500"></i>
+                </div>
+                <div>
+                  <h6 class="font-bold text-slate-800 text-[11px] uppercase tracking-wider mb-0.5">2. Fault / Anomaly Details</h6>
+                  <p class="text-slate-800 font-bold leading-tight">${cleanIssueText(diag.issue)}</p>
+                </div>
+              </div>
+
+              <!-- 3. Required Maintenance -->
+              <div class="flex items-start gap-2.5 pt-3 border-t border-slate-100/50">
+                <div class="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                  <i data-lucide="wrench" class="w-3.5 h-3.5 text-emerald-600"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex justify-between items-center mb-1">
+                    <h6 class="font-bold text-slate-800 text-[11px] uppercase tracking-wider">3. Required Maintenance</h6>
+                    <button id="copy-btn-ai-${i}" onclick="copyToClipboard('${(diag.recommended_action || '').replace(/'/g, "\\'")}', 'copy-btn-ai-${i}')" class="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-slate-800 transition-colors bg-transparent border-0 cursor-pointer">
+                      <i data-lucide="copy" class="w-3 h-3"></i>
+                      <span>Copy Actions</span>
+                    </button>
+                  </div>
+                  <ol class="space-y-1.5 text-slate-700 font-medium pl-0">${stepsHTML}</ol>
+                </div>
               </div>
             </div>
           </div>`);
@@ -826,7 +979,7 @@
       }).format(dateObj);
 
       document.getElementById('meta').innerText = `ID: ${alertData.id} • ${formattedDate}`;
-      document.getElementById('summary').innerText = alertData.summary || 'No summary provided.';
+      document.getElementById('summary').innerText = cleanSummaryText(alertData.summary || 'No summary provided.');
       
       // Save parsed diagnoses data globally
       try {
@@ -850,6 +1003,7 @@
       // Calculate counts and render everything
       updateCounts();
       renderAllActive();
+      updateOverallStatusUI();
 
       // Handle custom modal delete confirmation
       confirmBtn.onclick = async () => {
