@@ -355,6 +355,21 @@
 
             <div class="add-metric-wrapper flex items-center gap-4">
                 <div class="flex flex-col">
+                    <label for="ac-selector" class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Unit</label>
+                    <select id="ac-selector" class="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-sm font-semibold text-slate-700 outline-none hover:border-slate-300 transition-colors cursor-pointer">
+                        <option value="telemetry">Telemetry</option>
+                        <option value="AC2">AC2 (Healthy)</option>
+                        <option value="AC3">AC3 (Compressor Overheat)</option>
+                        <option value="AC4">AC4 (Compressor Overheat)</option>
+                        <option value="AC5">AC5 (Refrigerant Leak)</option>
+                        <option value="AC6">AC6 (Excessive Vibration)</option>
+                        <option value="AC7">AC7 (Evaporator Freezing)</option>
+                        <option value="AC8">AC8 (Healthy)</option>
+                        <option value="AC9">AC9 (Healthy)</option>
+                        <option value="AC10">AC10 (Healthy)</option>
+                    </select>
+                </div>
+                <div class="flex flex-col">
                     <label for="sourceSelect" class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Data Source</label>
                     <select id="sourceSelect" class="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-sm font-semibold text-slate-700 outline-none hover:border-slate-300 transition-colors cursor-pointer">
                         <option value="telemetry">Live Telemetry</option>
@@ -501,8 +516,19 @@
             activeColumns = [currentColumns()[0]];
         }
 
-        const defaultRange = 'today';
+        const defaultRange = 'thisMonth';
         let activeRange = defaultRange;
+        let activeAC = localStorage.getItem('data_gathered_active_ac') || 'AC2';
+
+        const acSelector = document.getElementById('ac-selector');
+        if (acSelector) {
+            acSelector.value = activeAC;
+            acSelector.addEventListener('change', (e) => {
+                activeAC = e.target.value;
+                localStorage.setItem('data_gathered_active_ac', activeAC);
+                fetchAndRender();
+            });
+        }
 
         const columnSelect = document.getElementById('columnSelect');
         const rangesEl = document.getElementById('ranges');
@@ -908,24 +934,17 @@
 
                     if (totalPoints === 0) throw new Error("No data returned");
                 } catch (err) {
-                    console.log("Using mock data since backend is empty/unavailable for historical.");
-                    document.getElementById('mock-warning-banner').style.display = 'flex';
-                    if (window.lucide) window.lucide.createIcons();
+                    console.error("Failed to load historical data:", err);
+                    document.getElementById('mock-warning-banner').style.display = 'none';
                     activeColumns.forEach(col => {
-                        const mockPts = generateMockHistoricalData(start, end, col);
-                        const downsampled = downsamplePoints(mockPts);
-                        datasetsData[col] = downsampled;
-                        if (downsampled.length > maxPointsInDataset) {
-                            maxPointsInDataset = downsampled.length;
-                        }
-                        totalPoints += downsampled.length;
+                        datasetsData[col] = [];
                     });
                 }
             } else {
                 try {
                     // Fetch all columns concurrently
                     const fetchPromises = activeColumns.map(async (column) => {
-                        let url = '/telemetry/column?column=' + encodeURIComponent(column);
+                        let url = '/telemetry/column?column=' + encodeURIComponent(column) + '&ac_unit=' + encodeURIComponent(activeAC);
                         if (start) url += '&start=' + encodeURIComponent(start);
                         if (end) url += '&end=' + encodeURIComponent(end);
 
@@ -975,16 +994,10 @@
 
                     if (totalPoints === 0) throw new Error("No telemetry data returned");
                 } catch (err) {
-                    console.log("Using mock data since backend is empty/unavailable for telemetry.");
-                    document.getElementById('mock-warning-banner').style.display = 'flex';
-                    if (window.lucide) window.lucide.createIcons();
+                    console.error("Failed to load telemetry data:", err);
+                    document.getElementById('mock-warning-banner').style.display = 'none';
                     activeColumns.forEach(col => {
-                        const mockPts = generateMockData(start, end, col);
-                        datasetsData[col] = mockPts;
-                        if (mockPts.length > maxPointsInDataset) {
-                            maxPointsInDataset = mockPts.length;
-                        }
-                        totalPoints += mockPts.length;
+                        datasetsData[col] = [];
                     });
                 }
             }

@@ -100,7 +100,23 @@
                 <p class="text-sm text-slate-500 mt-1">Monitoring live sensor data across all systems</p>
             </div>
 
-            <div class="flex items-center justify-between md:justify-end gap-6">
+            <div class="flex flex-wrap items-center justify-between md:justify-end gap-4">
+                <!-- AC Selector -->
+                <div class="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100 shadow-sm">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Unit:</span>
+                    <select id="ac-selector" class="text-xs font-semibold bg-white text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-brand-200 cursor-pointer">
+                        <option value="telemetry">Telemetry</option>
+                        <option value="AC2">AC2 (Healthy)</option>
+                        <option value="AC3">AC3 (Compressor Overheat)</option>
+                        <option value="AC4">AC4 (Compressor Overheat)</option>
+                        <option value="AC5">AC5 (Refrigerant Leak)</option>
+                        <option value="AC6">AC6 (Excessive Vibration)</option>
+                        <option value="AC7">AC7 (Evaporator Freezing)</option>
+                        <option value="AC8">AC8 (Healthy)</option>
+                        <option value="AC9">AC9 (Healthy)</option>
+                        <option value="AC10">AC10 (Healthy)</option>
+                    </select>
+                </div>
                 <div class="text-sm text-slate-600 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
                     Showing latest <strong id="point-count" class="text-brand-600 font-semibold">10</strong> readings
                 </div>
@@ -350,37 +366,41 @@
             return [...mockState];
         }
 
-        let isUsingMock = false;
+        let activeAC = localStorage.getItem('data_gathered_active_ac') || 'AC2';
+        const acSelector = document.getElementById('ac-selector');
+        if (acSelector) {
+            acSelector.value = activeAC;
+            acSelector.addEventListener('change', (e) => {
+                activeAC = e.target.value;
+                localStorage.setItem('data_gathered_active_ac', activeAC);
+                renderLatest();
+            });
+        }
+
         async function fetchRows() {
-            try {
-                const res = await fetch('/telemetry');
-                if (res.ok) {
-                    isUsingMock = false;
-                    return await res.json();
-                }
-                throw new Error('Network response was not ok');
-            } catch (e) {
-                console.warn('Backend unavailable, falling back to mock data for preview purposes.');
-                isUsingMock = true;
-                return generateMockData();
-            }
+            const res = await fetch(`/telemetry?ac_unit=${encodeURIComponent(activeAC)}`);
+            if (!res.ok) throw new Error('Network response was not ok');
+            return await res.json();
         }
 
         async function renderLatest() {
             // Spin animation on refresh icon
             refreshIcon.classList.add('animate-spin');
             statusMessageEl.classList.add('hidden');
+            document.getElementById('mock-warning-banner').style.display = 'none';
 
             try {
                 const rows = await fetchRows();
-                if (isUsingMock) {
-                    document.getElementById('mock-warning-banner').style.display = 'flex';
-                    if (window.lucide) window.lucide.createIcons();
-                } else {
-                    document.getElementById('mock-warning-banner').style.display = 'none';
+                if (!rows || rows.length === 0) {
+                    statusMessageEl.textContent = 'No real telemetry data available for this AC unit.';
+                    statusMessageEl.classList.remove('hidden');
+                    document.getElementById('charts').innerHTML = '';
+                    chartInstances = {};
+                    pointCountEl.textContent = 0;
+                    return;
                 }
                 const latest = rows.length > 10 ? rows.slice(-10) : rows.slice();
-                pointCountEl.textContent = Math.max(1, latest.length);
+                pointCountEl.textContent = latest.length;
 
                 const labels = latest.map(r => toPhilippineDateTimeLabel(r.timestamp));
 

@@ -179,6 +179,20 @@
     <h1>Single Column Graph</h1>
     <div class="card">
         <div class="controls">
+            <label class="small">Unit:</label>
+            <select id="ac-selector" style="margin-right: 8px;">
+                <option value="telemetry">Telemetry</option>
+                <option value="AC2">AC2 (Healthy)</option>
+                <option value="AC3">AC3 (Compressor Overheat)</option>
+                <option value="AC4">AC4 (Compressor Overheat)</option>
+                <option value="AC5">AC5 (Refrigerant Leak)</option>
+                <option value="AC6">AC6 (Excessive Vibration)</option>
+                <option value="AC7">AC7 (Evaporator Freezing)</option>
+                <option value="AC8">AC8 (Healthy)</option>
+                <option value="AC9">AC9 (Healthy)</option>
+                <option value="AC10">AC10 (Healthy)</option>
+            </select>
+
             <label class="small">Column:</label>
             <select id="columnSelect"></select>
 
@@ -219,7 +233,18 @@
 
         const urlParams = new URLSearchParams(location.search);
         const initialColumn = urlParams.get('columns') || 'dust_sensor';
-        const defaultRange = 'today';
+        const defaultRange = 'thisMonth';
+        let activeAC = localStorage.getItem('data_gathered_active_ac') || 'AC2';
+
+        const acSelector = document.getElementById('ac-selector');
+        if (acSelector) {
+            acSelector.value = activeAC;
+            acSelector.addEventListener('change', (e) => {
+                activeAC = e.target.value;
+                localStorage.setItem('data_gathered_active_ac', activeAC);
+                fetchAndRender();
+            });
+        }
 
         const columnSelect = document.getElementById('columnSelect');
         const rangesEl = document.getElementById('ranges');
@@ -329,7 +354,7 @@
         async function fetchAndRender() {
             const column = columnSelect.value;
             const { start, end } = computeRangeStartEnd(activeRange);
-            let url = '/telemetry/column?column=' + encodeURIComponent(column);
+            let url = '/telemetry/column?column=' + encodeURIComponent(column) + '&ac_unit=' + encodeURIComponent(activeAC);
             if (start) url += '&start=' + encodeURIComponent(start);
             if (end) url += '&end=' + encodeURIComponent(end);
             console.log(start);
