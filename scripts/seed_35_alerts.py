@@ -42,7 +42,7 @@ ANOMALOUS_AC_TEMPLATES = [
                     "confidence_score": 93,
                     "root_cause": "Discharge line temperature is extremely high (97.0 °C), indicating potential thermal strain inside the compressor.",
                     "severity": "High",
-                    "recommended_action": "Inspect the condenser fan and clean the condenser coils."
+                    "recommended_action": "Check whether the condenser fan is operating properly. Stop operating the air conditioner if the current continues to increase to prevent compressor damage and protect the electrical wiring and circuit breaker."
                 }
             ]
         }
@@ -67,12 +67,20 @@ ANOMALOUS_AC_TEMPLATES = [
         "ai_diagnoses": {
             "diagnoses": [
                 {
-                    "issue": "Excessive Compressor Vibration and Dust Accumulation",
+                    "issue": "Excessive Compressor Vibration",
+                    "status": "Current",
+                    "confidence_score": 90,
+                    "root_cause": "Vibration levels are near warning limits (94.2 Hz) indicating potential mechanical wear.",
+                    "severity": "Low",
+                    "recommended_action": "Inspect the compressor mounting, internal components, and check for signs of compressor wear or mechanical looseness."
+                },
+                {
+                    "issue": "Dirty Air Filter",
                     "status": "Current",
                     "confidence_score": 93,
-                    "root_cause": "High dust level (436.0 µg/m³) indicates that the filter is heavily clogged, restricting airflow and reducing heat transfer efficiency.",
+                    "root_cause": "High dust level (436.0 µg/m³) indicates that the filter is heavily clogged, restricting airflow.",
                     "severity": "Low",
-                    "recommended_action": "Clean/replace filter and clean evaporator coil."
+                    "recommended_action": "Clean the air filter and inspect the evaporator section for dust accumulation that may restrict airflow."
                 }
             ]
         }
@@ -81,28 +89,27 @@ ANOMALOUS_AC_TEMPLATES = [
         "fault": "Refrigerant leak",
         "ac_unit": "AC5",
         "base_telemetry": {
-            "dust_sensor": None,
-            "dht_temp": 26.0,          # High output temp (> 25 °C)
-            "dht_humidity": 70.0,
-            "vibration": 75.0,
-            "ds18b20_temp1": 48.5,     # Low discharge temp (< 50 °C)
-            "ds18b20_temp2": 19.0,     # High suction temp (> 17 °C)
-            "pzem_voltage": 227.0,
-            "pzem_current": 6.5,       # Low current (< 7.6 A)
-            "pzem_power": 1475.0,      # Low power (< 1700 W)
-            "pzem_energy": 2.14,
+            "dust_sensor": 0.0,
+            "dht_temp": 27.5,          # High output temp (> 25 °C)
+            "dht_humidity": 72.0,      # Normal (<= 80%)
+            "vibration": 75.0,         # Normal (< 95 Hz)
+            "ds18b20_temp1": 60.0,     # Normal (50-70 °C)
+            "ds18b20_temp2": 19.5,     # High suction temp (> 17 °C)
+            "pzem_voltage": 234.0,     # High voltage (> 231 V)
+            "pzem_current": 8.08,      # Normal (7.6-8.8 A)
+            "pzem_power": 1890.0,      # High power (> 1860 W)
             "pzem_frequency": 60.0,
-            "pzem_power_factor": 0.82,
+            "pzem_power_factor": 0.88,
         },
         "ai_diagnoses": {
             "diagnoses": [
                 {
-                    "issue": "Refrigerant leak",
+                    "issue": "Voltage Overload and Supply Temp Overheating",
                     "status": "Current",
-                    "confidence_score": 94,
-                    "root_cause": "Low current (6.5A) and low power (1475W) combined with high suction temp (19.0 °C) confirm a low refrigerant charge condition.",
+                    "confidence_score": 95,
+                    "root_cause": "High power (1890W) and high voltage (234V) combined with high suction temp (19.5 °C) and high outlet supply temp (27.5 °C) suggest system overload.",
                     "severity": "High",
-                    "recommended_action": "Check for leaks in the coil and fittings, repair leaks, and recharge R410A."
+                    "recommended_action": "Check whether cold air is being discharged properly and inspect the evaporator fan for reduced airflow or malfunction."
                 }
             ]
         }
@@ -163,15 +170,17 @@ def seed_alerts():
                 "ai_diagnoses": tmpl["ai_diagnoses"]
             })
             
-            # Build short summary text
+            # Build short summary text using only the single most severe check
             findings = rule_result["findings"]
-            high_findings = [f for f in findings if f["severity"] in ("High", "Critical")]
+            severity_order = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1, 'Normal': 0 }
+            sorted_findings = sorted(findings, key=lambda x: severity_order.get(x["severity"], 0), reverse=True)
             
             summary_lines = [f"[RULE ENGINE] !! AC Diagnostic Alert ({tmpl['ac_unit']}) !!"]
-            for f in high_findings[:2]:
-                parts = [p.strip() for p in f["recommended_action"].split(". ") if p.strip()]
-                action_short = f"{parts[0]}." if parts else "Inspect unit."
-                summary_lines.append(f"\n[{f['severity'].upper()}] {f['issue']}\nAction: {action_short}")
+            if sorted_findings:
+                f = sorted_findings[0]
+                summary_lines.append(f"\n[{f['severity'].upper()}] {f['issue']}\nAction: {f['recommended_action']}")
+            else:
+                summary_lines.append("\n[NORMAL] All parameters are within normal guidelines.")
             summary_lines.append("\n\nCheck full system report for details.")
             summary = "\n".join(summary_lines)
             

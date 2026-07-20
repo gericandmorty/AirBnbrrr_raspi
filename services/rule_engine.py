@@ -27,7 +27,7 @@ RULES = [
         "sensor":      "pzem_power",
         "label":       "Power Consumption (W)",
         "unit":        "W",
-        "normal_min":  1700.0,
+        "normal_min":  1650.0,
         "normal_max":  1860.0,
         "checks": [
             {
@@ -50,13 +50,13 @@ RULES = [
                 ),
             },
             {
-                "condition": lambda v: 0 < v < 1700.0,
-                "computed":  lambda v: f"{v:.1f} W  <  1700 W threshold",
+                "condition": lambda v: 0 < v < 1650.0,
+                "computed":  lambda v: f"{v:.1f} W  <  1650 W threshold",
                 "issue":     "Compressor Failed to Start (Fan-Only Mode Suspected)",
                 "severity":  "High",
                 "status":    "Current",
                 "root_cause": (
-                    "Power draw is significantly below 1700 W but above 0 W, "
+                    "Power draw is significantly below 1650 W but above 0 W, "
                     "which means only the fan motor (≈50–80 W) is running. "
                     "The compressor did not start. Common causes: failed start capacitor, "
                     "stuck contactor, open compressor winding, or incorrect thermostat mode."
@@ -197,9 +197,7 @@ RULES = [
                     "refrigerant loss, or restricted airflow."
                 ),
                 "recommended_action": (
-                    "1. Clean or replace the front air filter. "
-                    "2. Check if the compressor is running. "
-                    "3. Have a technician verify system pressures."
+                    "Check whether cold air is being discharged properly and inspect the evaporator fan for reduced airflow or malfunction."
                 ),
             },
             {
@@ -321,9 +319,7 @@ RULES = [
                     "causing the refrigeration cycle to work harder."
                 ),
                 "recommended_action": (
-                    "1. Clean the condenser coil (outdoor side) with a fin comb or hose. "
-                    "2. Check for blocked airflow around the unit. "
-                    "3. Have a certified technician check refrigerant pressure and recharge if needed."
+                    "Check whether the condenser fan is operating properly. Stop operating the air conditioner if the current continues to increase to prevent compressor damage and protect the electrical wiring and circuit breaker."
                 ),
             },
             {
@@ -410,9 +406,7 @@ RULES = [
                     "loose mounting bolts, or deteriorated rubber anti-vibration grommets."
                 ),
                 "recommended_action": (
-                    "1. Tighten all visible compressor mounting bolts. "
-                    "2. Inspect and replace anti-vibration grommets if hardened or cracked. "
-                    "3. If vibration continues, have the compressor inspected for internal wear."
+                    "Inspect the compressor mounting, internal components, and check for signs of compressor wear or mechanical looseness."
                 ),
             },
         ],
@@ -439,9 +433,7 @@ RULES = [
                     "and over time, compressor overwork."
                 ),
                 "recommended_action": (
-                    "1. Remove and clean (or replace) the front air filter. "
-                    "2. Schedule filter cleaning every 2–4 weeks in dusty environments. "
-                    "3. After cleaning, monitor if other sensor readings normalize."
+                    "Clean the air filter and inspect the evaporator section for dust accumulation that may restrict airflow."
                 ),
             },
         ],
