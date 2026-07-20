@@ -70,6 +70,23 @@ RULES = [
         "normal_range": "> 80 %",
         "measured_val_func": lambda tel: f"{tel.get('dht_humidity')} %",
         "unit": "%"
+    },
+    {
+        "id": "reduced_cooling",
+        "label": "Reduced Cooling Performance",
+        "description": "Deterministic check: Outlet Compressor ≥ 64°C AND Output Air ≥ 21°C AND Inlet ≥ 22°C",
+        "check": lambda tel: (
+            float(tel.get("ds18b20_temp1", 0) or 0) >= 64.0 and
+            float(tel.get("dht_temp", 0) or 0) >= 21.0 and
+            float(tel.get("ds18b20_temp2", 0) or 0) >= 22.0
+        ),
+        "issue": "Reduced Cooling Performance",
+        "severity": "Medium",
+        "root_cause": "The monitored temperatures indicate a reduction in cooling performance. Inspect the refrigerant system for possible refrigerant leakage or insufficient refrigerant charge.",
+        "recommended_action": "The monitored temperatures indicate a reduction in cooling performance. Inspect the refrigerant system for possible refrigerant leakage or insufficient refrigerant charge. Verify the condition using appropriate refrigeration service equipment and perform corrective maintenance if necessary.",
+        "normal_range": "Outlet < 64°C OR Output < 21°C OR Inlet < 22°C",
+        "measured_val_func": lambda tel: f"Outlet: {tel.get('ds18b20_temp1')}°C, Output: {tel.get('dht_temp')}°C, Inlet: {tel.get('ds18b20_temp2')}°C",
+        "unit": "°C"
     }
 ]
 

@@ -19,14 +19,14 @@ def generate_telemetry_for_ac5(pzem_energy):
     - Dust sensor: 0–200 µg/m³
     - Power, voltage, current all within normal range
     """
-    # Output air temp: slightly warm (reduced cooling)
-    output_temp = round(random.uniform(18.0, 22.0), 1)
-    # Inlet compressor: 2–3 °C above the output air (close but slightly higher)
+    # Output air temp: ≥ 21°C to trigger rule (reduced cooling, not cooling properly)
+    output_temp = round(random.uniform(21.0, 24.0), 1)
+    # Inlet compressor: 2–3 °C above the output air (close but slightly higher, ≥ 22°C)
     delta = round(random.uniform(2.0, 3.0), 1)
     inlet_comp = round(output_temp + delta, 1)
 
-    # Outlet compressor: independently 62–71 °C
-    outlet_comp = round(random.uniform(62.0, 71.0), 1)
+    # Outlet compressor: ≥ 64°C to trigger rule (independently 64–71 °C)
+    outlet_comp = round(random.uniform(64.0, 71.0), 1)
 
     power   = round(random.uniform(1650.0, 1860.0), 1)   # Normal
     voltage = round(random.uniform(225.0, 231.0), 1)      # Normal

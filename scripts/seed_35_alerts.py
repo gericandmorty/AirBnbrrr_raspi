@@ -105,18 +105,18 @@ ANOMALOUS_AC_TEMPLATES = [
         }
     },
     {
-        "fault": "Low Humidity",
+        "fault": "Reduced Cooling Performance",
         "ac_unit": "AC5",
         "base_telemetry": {
-            "dust_sensor": 85.0,
-            "dht_temp": 22.0,           # Outlet air temp (near normal)
-            "dht_humidity": 74.0,       # Triggers humidity <= 80
+            "dust_sensor": 95.0,
+            "dht_temp": 22.0,           # Output air temp >= 21°C (triggers rule)
+            "dht_humidity": 74.0,       # Normal (<= 80%)
             "vibration": 72.0,          # Normal (< 90 Hz)
-            "ds18b20_temp1": 60.0,      # Normal (50-70 °C)
-            "ds18b20_temp2": 24.5,      # Inlet: ~2-3°C above outlet (refrigerant leak sign)
-            "pzem_voltage": 228.0,      # Normal
-            "pzem_current": 7.8,        # Normal
-            "pzem_power": 1750.0,       # Normal
+            "ds18b20_temp1": 66.0,      # Outlet compressor >= 64°C (triggers rule)
+            "ds18b20_temp2": 24.5,      # Inlet >= 22°C AND ~2-3°C above output (triggers rule)
+            "pzem_voltage": 228.0,
+            "pzem_current": 7.8,
+            "pzem_power": 1750.0,
             "pzem_frequency": 60.0,
             "pzem_power_factor": 0.88,
         },
@@ -126,9 +126,9 @@ ANOMALOUS_AC_TEMPLATES = [
                     "issue": "Reduced Cooling Performance",
                     "status": "Current",
                     "confidence_score": 92,
-                    "root_cause": "Outlet and inlet/suction temperatures are unusually close together (inlet ~2–3 °C above outlet), indicating insufficient refrigerant charge reducing heat exchange and cooling efficiency.",
-                    "severity": "Low",
-                    "recommended_action": "Check whether cold air is being discharged properly and inspect the evaporator fan for reduced airflow or malfunction."
+                    "root_cause": "Outlet and inlet/suction temperatures are unusually close together (inlet ~2–3 °C above output), and compressor outlet temp is elevated, indicating insufficient refrigerant charge reducing heat exchange and cooling efficiency.",
+                    "severity": "Medium",
+                    "recommended_action": "The monitored temperatures indicate a reduction in cooling performance. Inspect the refrigerant system for possible refrigerant leakage or insufficient refrigerant charge. Verify the condition using appropriate refrigeration service equipment and perform corrective maintenance if necessary."
                 }
             ]
         }
