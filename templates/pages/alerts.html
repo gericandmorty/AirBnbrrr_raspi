@@ -85,6 +85,106 @@
       </div>
     </header>
 
+    <!-- Normal Operating Parameters Reference Guide -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
+      <div class="flex items-center justify-between cursor-pointer select-none" onclick="toggleReferenceGuide()">
+        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2.5">
+          <div class="p-1.5 bg-blue-50 rounded-lg text-blue-600 border border-blue-100 flex items-center justify-center">
+            <i data-lucide="info" class="w-4 h-4"></i>
+          </div>
+          Normal Operating Guidelines
+        </h2>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400 font-semibold" id="ref-status-text">Show guide</span>
+          <i data-lucide="chevron-down" id="ref-chevron" class="w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+        </div>
+      </div>
+      
+      <div id="reference-guide-content" class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 hidden border-t border-slate-100 pt-4">
+        <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
+          <div class="p-1.5 bg-amber-50 rounded-lg text-amber-500 border border-amber-100 flex items-center justify-center mt-0.5">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Power Usage</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">1700–1820 W</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
+          <div class="p-1.5 bg-indigo-50 rounded-lg text-indigo-500 border border-indigo-100 flex items-center justify-center mt-0.5">
+            <i data-lucide="plug" class="w-3.5 h-3.5"></i>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Supply Voltage</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">225–231 V</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
+          <div class="p-1.5 bg-rose-50 rounded-lg text-rose-500 border border-rose-100 flex items-center justify-center mt-0.5">
+            <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Operating Current</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">7.6–8.2 A</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
+          <div class="p-1.5 bg-blue-50 rounded-lg text-blue-500 border border-blue-100 flex items-center justify-center mt-0.5">
+            <i data-lucide="thermometer" class="w-3.5 h-3.5"></i>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Output Temperature</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">7–25 °C</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
+          <div class="p-1.5 bg-sky-50 rounded-lg text-sky-500 border border-sky-100 flex items-center justify-center mt-0.5">
+            <i data-lucide="droplets" class="w-3.5 h-3.5"></i>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Output Humidity</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">95–100%</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
+          <div class="p-1.5 bg-orange-50 rounded-lg text-orange-500 border border-orange-100 flex items-center justify-center mt-0.5">
+            <i data-lucide="flame" class="w-3.5 h-3.5"></i>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Outlet Compressor Temp</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">50–70 °C</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
+          <div class="p-1.5 bg-cyan-50 rounded-lg text-cyan-500 border border-cyan-100 flex items-center justify-center mt-0.5">
+            <i data-lucide="snowflake" class="w-3.5 h-3.5"></i>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inlet Compressor Temp</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">8–17 °C</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
+          <div class="p-1.5 bg-purple-50 rounded-lg text-purple-500 border border-purple-100 flex items-center justify-center mt-0.5">
+            <i data-lucide="vibrate" class="w-3.5 h-3.5"></i>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Compressor Vibration</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">60–90 Hz</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
+          <div class="p-1.5 bg-emerald-50 rounded-lg text-emerald-500 border border-emerald-100 flex items-center justify-center mt-0.5">
+            <i data-lucide="wind" class="w-3.5 h-3.5"></i>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dust Level</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">0–340 µg/m³</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Alerts Content Wrapper (toggled by JS) -->
     <div id="alerts-content" class="hidden">
       <!-- Main Card & Table (Desktop) -->
@@ -525,6 +625,22 @@
         renderAlerts();
       }
     });
+
+    function toggleReferenceGuide() {
+      const content = document.getElementById('reference-guide-content');
+      const chevron = document.getElementById('ref-chevron');
+      const text = document.getElementById('ref-status-text');
+      const isHidden = content.classList.contains('hidden');
+      if (isHidden) {
+        content.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+        text.textContent = 'Hide guide';
+      } else {
+        content.classList.add('hidden');
+        chevron.style.transform = '';
+        text.textContent = 'Show guide';
+      }
+    }
 
     // Initial Load
     fetchAlerts();
