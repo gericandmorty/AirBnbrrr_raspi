@@ -18,19 +18,18 @@ WEEKDAYS = [9, 10, 13, 14, 15, 16, 17, 20]
 # Predefined templates matching the exact accumulated errors in data_gathered
 ANOMALOUS_AC_TEMPLATES = [
     {
-        "fault": "Compressor Overheating Anomaly",
+        "fault": "Compressor Overheating",
         "ac_unit": "AC3",
         "base_telemetry": {
-            "dust_sensor": None,
-            "dht_temp": 22.5,
-            "dht_humidity": 98.0,
-            "vibration": 72.9,
-            "ds18b20_temp1": 97.0,     # Overheating discharge (> 70 °C)
-            "ds18b20_temp2": 12.6,
+            "dust_sensor": 0.0,
+            "dht_temp": 24.5,
+            "dht_humidity": 85.0,
+            "vibration": 95.0,         # Triggers vibration >= 90
+            "ds18b20_temp1": 60.0,
+            "ds18b20_temp2": 12.0,
             "pzem_voltage": 228.0,
-            "pzem_current": 7.55,
-            "pzem_power": 1692.0,
-            "pzem_energy": 4.12,
+            "pzem_current": 9.2,       # Triggers current >= 8.8
+            "pzem_power": 1890.0,      # Triggers power >= 1860
             "pzem_frequency": 60.0,
             "pzem_power_factor": 0.88,
         },
@@ -39,8 +38,8 @@ ANOMALOUS_AC_TEMPLATES = [
                 {
                     "issue": "Compressor Overheating",
                     "status": "Current",
-                    "confidence_score": 93,
-                    "root_cause": "Discharge line temperature is extremely high (97.0 °C), indicating potential thermal strain inside the compressor.",
+                    "confidence_score": 95,
+                    "root_cause": "Indicates the compressor is under high electrical and mechanical load, commonly associated with reduced condenser cooling efficiency or compressor overloading.",
                     "severity": "High",
                     "recommended_action": "Check whether the condenser fan is operating properly. Stop operating the air conditioner if the current continues to increase to prevent compressor damage and protect the electrical wiring and circuit breaker."
                 }
@@ -48,37 +47,57 @@ ANOMALOUS_AC_TEMPLATES = [
         }
     },
     {
-        "fault": "Excessive Compressor Vibration and Dust Accumulation",
+        "fault": "Abnormal Compressor Vibration",
         "ac_unit": "AC4",
         "base_telemetry": {
-            "dust_sensor": 436.0,      # High dust (> 340 µg/m³)
-            "dht_temp": 26.9,          # Elevated supply air temperature (> 25 °C)
-            "dht_humidity": 66.8,
-            "vibration": 94.8,         # Normal / slightly high vibration
-            "ds18b20_temp1": 62.5,     # Normal discharge temp
-            "ds18b20_temp2": 15.9,     # Normal suction temp
-            "pzem_voltage": 232.1,
-            "pzem_current": 7.87,
-            "pzem_power": 1794.8,
-            "pzem_energy": 5.12,
+            "dust_sensor": 0.0,
+            "dht_temp": 23.5,
+            "dht_humidity": 85.0,
+            "vibration": 95.0,         # Triggers vibration >= 90
+            "ds18b20_temp1": 60.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 7.8,       # Normal current
+            "pzem_power": 1750.0,      # Normal power
             "pzem_frequency": 60.0,
             "pzem_power_factor": 0.88,
         },
         "ai_diagnoses": {
             "diagnoses": [
                 {
-                    "issue": "Excessive Compressor Vibration",
-                    "status": "Current",
-                    "confidence_score": 90,
-                    "root_cause": "Vibration levels are near warning limits (94.2 Hz) indicating potential mechanical wear.",
-                    "severity": "Low",
-                    "recommended_action": "Inspect the compressor mounting, internal components, and check for signs of compressor wear or mechanical looseness."
-                },
-                {
-                    "issue": "Dirty Air Filter",
+                    "issue": "Abnormal Compressor Vibration",
                     "status": "Current",
                     "confidence_score": 93,
-                    "root_cause": "High dust level (436.0 µg/m³) indicates that the filter is heavily clogged, restricting airflow.",
+                    "root_cause": "Indicates excessive vibration that may result from compressor wear, loose mounting, or internal mechanical deterioration.",
+                    "severity": "Medium",
+                    "recommended_action": "Inspect the compressor mounting, internal components, and check for signs of compressor wear or mechanical looseness."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "High Dust Concentration",
+        "ac_unit": "AC4",
+        "base_telemetry": {
+            "dust_sensor": 436.0,      # Triggers dust >= 340
+            "dht_temp": 23.5,
+            "dht_humidity": 85.0,
+            "vibration": 75.0,
+            "ds18b20_temp1": 60.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 7.8,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "High Dust Concentration",
+                    "status": "Current",
+                    "confidence_score": 93,
+                    "root_cause": "Indicates excessive airborne dust that may clog the air filter or restrict airflow, reducing cooling efficiency.",
                     "severity": "Low",
                     "recommended_action": "Clean the air filter and inspect the evaporator section for dust accumulation that may restrict airflow."
                 }
@@ -86,34 +105,34 @@ ANOMALOUS_AC_TEMPLATES = [
         }
     },
     {
-        "fault": "Refrigerant leak",
+        "fault": "Low Humidity",
         "ac_unit": "AC5",
         "base_telemetry": {
             "dust_sensor": 0.0,
-            "dht_temp": 27.5,          # High output temp (> 25 °C)
-            "dht_humidity": 72.0,      # Normal (<= 80%)
-            "vibration": 75.0,         # Normal (< 95 Hz)
-            "ds18b20_temp1": 60.0,     # Normal (50-70 °C)
-            "ds18b20_temp2": 19.5,     # High suction temp (> 17 °C)
-            "pzem_voltage": 234.0,     # High voltage (> 231 V)
-            "pzem_current": 8.08,      # Normal (7.6-8.8 A)
-            "pzem_power": 1890.0,      # High power (> 1860 W)
+            "dht_temp": 23.5,
+            "dht_humidity": 72.0,      # Triggers humidity <= 80
+            "vibration": 75.0,
+            "ds18b20_temp1": 60.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 7.8,
+            "pzem_power": 1750.0,
             "pzem_frequency": 60.0,
             "pzem_power_factor": 0.88,
         },
         "ai_diagnoses": {
             "diagnoses": [
                 {
-                    "issue": "Voltage Overload and Supply Temp Overheating",
+                    "issue": "Low Humidity",
                     "status": "Current",
-                    "confidence_score": 95,
-                    "root_cause": "High power (1890W) and high voltage (234V) combined with high suction temp (19.5 °C) and high outlet supply temp (27.5 °C) suggest system overload.",
-                    "severity": "High",
+                    "confidence_score": 92,
+                    "root_cause": "Indicates reduced cooling performance or weak airflow from the indoor unit. Inspect the evaporator fan and verify that cold air is being discharged properly.",
+                    "severity": "Low",
                     "recommended_action": "Check whether cold air is being discharged properly and inspect the evaporator fan for reduced airflow or malfunction."
                 }
             ]
         }
-    },
+    }
 ]
 
 def seed_alerts():
