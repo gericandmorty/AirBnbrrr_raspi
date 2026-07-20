@@ -71,7 +71,7 @@ def create_healthy_alerts():
             )
             
             inserted_count += 1
-            current_ts += timedelta(minutes=30)
+            current_ts += timedelta(hours=2)
             
         conn.commit()
         print(f"Successfully created {inserted_count} healthy heartbeat alerts in the alerts table!")

@@ -28,16 +28,16 @@ RULES = [
         "label":       "Power Consumption (W)",
         "unit":        "W",
         "normal_min":  1700.0,
-        "normal_max":  1820.0,
+        "normal_max":  1860.0,
         "checks": [
             {
-                "condition": lambda v: v > 1820.0,
-                "computed":  lambda v: f"{v:.1f} W  >  1820 W threshold",
+                "condition": lambda v: v > 1860.0,
+                "computed":  lambda v: f"{v:.1f} W  >  1860 W threshold",
                 "issue":     "Overloaded Compressor or Failing Run Capacitor",
                 "severity":  "High",
                 "status":    "Current",
                 "root_cause": (
-                    "Power draw exceeds the rated maximum of 1820 W. "
+                    "Power draw exceeds the rated maximum of 1860 W. "
                     "This indicates the compressor is working harder than normal — "
                     "typically caused by a dirty condenser coil restricting heat dissipation, "
                     "low refrigerant forcing the compressor to cycle longer, "
@@ -138,11 +138,11 @@ RULES = [
         "label":       "AC Operating Current (A)",
         "unit":        "A",
         "normal_min":  7.6,
-        "normal_max":  8.2,
+        "normal_max":  8.8,
         "checks": [
             {
-                "condition": lambda v: v > 8.2,
-                "computed":  lambda v: f"{v:.2f} A  >  8.2 A threshold",
+                "condition": lambda v: v > 8.8,
+                "computed":  lambda v: f"{v:.2f} A  >  8.8 A threshold",
                 "issue":     "High AC Current — Overloaded Compressor Winding",
                 "severity":  "High",
                 "status":    "Current",
@@ -225,17 +225,17 @@ RULES = [
         "sensor":      "dht_humidity",
         "label":       "AC Output Humidity (%)",
         "unit":        "%",
-        "normal_min":  95.0,
-        "normal_max":  100.0,
+        "normal_min":  0.0,
+        "normal_max":  80.0,
         "checks": [
             {
-                "condition": lambda v: v < 95.0,
-                "computed":  lambda v: f"{v:.1f}%  <  95% threshold",
-                "issue":     "Low Output Humidity — Inefficient Dehumidification",
+                "condition": lambda v: v > 80.0,
+                "computed":  lambda v: f"{v:.1f}%  >  80% threshold",
+                "issue":     "High Output Humidity — Risk of Condensation",
                 "severity":  "Medium",
                 "status":    "Current",
                 "root_cause": (
-                    "Humidity level of the supply air is below 95%."
+                    "Humidity level of the supply air is above 80%."
                 ),
                 "recommended_action": (
                     "1. Verify the thermostat setpoint and clean the evaporator coil."
@@ -395,17 +395,17 @@ RULES = [
         "sensor":      "vibration",
         "label":       "Compressor Vibration (Hz)",
         "unit":        "Hz",
-        "normal_min":  60.0,
-        "normal_max":  90.0,
+        "normal_min":  0.0,
+        "normal_max":  95.0,
         "checks": [
             {
-                "condition": lambda v: v > 90.0,
-                "computed":  lambda v: f"{v:.1f} Hz  >  90 Hz threshold",
+                "condition": lambda v: v >= 95.0,
+                "computed":  lambda v: f"{v:.1f} Hz  >=  95 Hz threshold",
                 "issue":     "Excessive Compressor Vibration — Mechanical Wear or Loose Mount",
                 "severity":  "Medium",
                 "status":    "Current",
                 "root_cause": (
-                    "Compressor vibration above 90 Hz is abnormal. "
+                    "Compressor vibration equal to or above 95 Hz is abnormal. "
                     "Possible causes: worn compressor internal components, "
                     "loose mounting bolts, or deteriorated rubber anti-vibration grommets."
                 ),

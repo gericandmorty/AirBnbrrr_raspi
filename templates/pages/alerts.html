@@ -111,7 +111,7 @@
           </div>
           <div>
             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Power Usage</div>
-            <div class="text-xs font-bold text-slate-700 mt-0.5">1700–1820 W</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">1700–1860 W</div>
           </div>
         </div>
         <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
@@ -129,7 +129,7 @@
           </div>
           <div>
             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Operating Current</div>
-            <div class="text-xs font-bold text-slate-700 mt-0.5">7.6–8.2 A</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">7.6–8.8 A</div>
           </div>
         </div>
         <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
@@ -147,7 +147,7 @@
           </div>
           <div>
             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Output Humidity</div>
-            <div class="text-xs font-bold text-slate-700 mt-0.5">95–100%</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">≤ 80%</div>
           </div>
         </div>
         <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
@@ -174,7 +174,7 @@
           </div>
           <div>
             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Compressor Vibration</div>
-            <div class="text-xs font-bold text-slate-700 mt-0.5">60–90 Hz</div>
+            <div class="text-xs font-bold text-slate-700 mt-0.5">&lt; 95 Hz</div>
           </div>
         </div>
         <div class="flex items-start gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100/50">
@@ -288,7 +288,7 @@
       const iss = (issue || '').toLowerCase();
       const key = (sensorKey || '').toLowerCase();
       
-      if (iss.includes('freezing') || iss.includes('filter') || key.includes('dust') || key.includes('dht_humidity')) {
+      if (iss.includes('freezing') || iss.includes('filter') || key.includes('dust') || key.includes('dht_humidity') || iss.includes('vibration') || key.includes('vibration')) {
           return 'Need Cleaning';
       }
       if (iss.includes('leak') || iss.includes('refrigerant') || key.includes('temp2')) {
@@ -297,16 +297,13 @@
       if (iss.includes('overheating') || iss.includes('discharge') || key.includes('temp1')) {
           return 'Need Maintenance';
       }
-      if (iss.includes('vibration') || key.includes('vibration')) {
-          return 'Need Maintenance';
-      }
       if (severity === 'Critical') {
           return 'Need Repair';
       }
       if (severity === 'High' || severity === 'Medium') {
           return 'Need Maintenance';
       }
-      return 'Healthy';
+      return 'Good condition';
     }
 
     function getACConditionColorClass(status) {
@@ -337,7 +334,6 @@
             }
           }
           const aiList = (aiDiagnoses && aiDiagnoses.diagnoses) || [];
-          
           const statuses = [];
           ruleFindings.forEach(f => {
             statuses.push(getACConditionStatus(f.severity, f.issue, f.sensor_key));
@@ -345,6 +341,30 @@
           aiList.forEach(d => {
             statuses.push(getACConditionStatus(d.severity, d.issue, ''));
           });
+
+          // Override overall status to 'Need Cleaning' if unit is AC4, or dust/vibration is present
+          let isDustOrVibration = false;
+          const unit = (ruleResult && ruleResult.ac_unit) || '';
+          if (unit === 'AC4') {
+            isDustOrVibration = true;
+          }
+          ruleFindings.forEach(f => {
+            const key = (f.sensor_key || '').toLowerCase();
+            const iss = (f.issue || '').toLowerCase();
+            if (key.includes('dust') || key.includes('vibration') || iss.includes('dust') || iss.includes('vibration')) {
+              isDustOrVibration = true;
+            }
+          });
+          aiList.forEach(d => {
+            const iss = (d.issue || '').toLowerCase();
+            if (iss.includes('dust') || iss.includes('vibration') || iss.includes('vibrate') || iss.includes('filter') || iss.includes('clean')) {
+              isDustOrVibration = true;
+            }
+          });
+
+          if (isDustOrVibration) {
+            return 'Need Cleaning';
+          }
           
           if (statuses.includes('Need Repair')) {
             return 'Need Repair';
@@ -360,17 +380,16 @@
         console.error("Failed to parse diagnoses for status:", e);
       }
       
-      const sum = (a.summary || '').toLowerCase();
       if (sum.includes('heartbeat') || sum.includes('healthy') || sum.includes('normal')) {
-        return 'Healthy';
+        return 'Good condition';
       }
-      if (sum.includes('freezing') || sum.includes('filter') || sum.includes('clean')) {
+      if (sum.includes('freezing') || sum.includes('filter') || sum.includes('clean') || sum.includes('vibration')) {
         return 'Need Cleaning';
       }
       if (sum.includes('repair') || sum.includes('critical')) {
         return 'Need Repair';
       }
-      if (sum.includes('overheating') || sum.includes('vibration') || sum.includes('maintenance') || sum.includes('leak') || sum.includes('refrigerant')) {
+      if (sum.includes('overheating') || sum.includes('maintenance') || sum.includes('leak') || sum.includes('refrigerant')) {
         return 'Need Maintenance';
       }
       return 'Need Maintenance';
@@ -698,10 +717,10 @@
           if (alertsCount === 0) {
             // Healthy!
             badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 ml-2";
-            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Raspi ON: Healthy`;
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Raspi ON: Good condition`;
             
-            if (emptyTitle) emptyTitle.textContent = "All Clear — System is Healthy";
-            if (emptyDesc) emptyDesc.textContent = "The Raspberry Pi is ON and monitoring actively. No anomalies have been detected in the last 30 minutes.";
+            if (emptyTitle) emptyTitle.textContent = "All Clear — Good condition";
+            if (emptyDesc) emptyDesc.textContent = "The Raspberry Pi is ON and monitoring actively. No anomalies have been detected in the last 2 hours.";
             if (emptyIconContainer) {
               emptyIconContainer.className = "inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 mb-4";
               emptyIconContainer.innerHTML = `<i data-lucide="shield-check" class="w-8 h-8 text-emerald-600"></i>`;

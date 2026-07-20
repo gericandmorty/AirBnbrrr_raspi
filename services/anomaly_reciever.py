@@ -76,17 +76,17 @@ SYSTEM SPECIFICATIONS:
 - Capacity: 1.5 HP
 - Type: Manual Window Type (Non-Inverter)
 - Refrigerant: R410A
-- Expected Power Consumption: 1700W - 1820W
-- Expected Current: 7.6A - 8.2A
+- Expected Watts: 1700W - 1860W
+- Expected Current: 7.6A - 8.8A
 - Voltage/Frequency: 225-231V / 60Hz / 1Ph
 
 SENSOR CONTEXT & PLACEMENT:
-- Return Air (AC Output Temp/Humidity): Measures room/supply air. Expected normal range is 7-25 °C and 95-100% humidity.
-- Compressor Vibration: Mounted on the compressor. Expected normal range is 60-90 Hz. Vibration > 90 Hz indicates mechanical wear or loose mounts.
+- Return Air (AC Output Temp/Humidity): Measures room/supply air. Expected normal range is 7-25 °C and humidity <= 80%.
+- Compressor Vibration: Mounted on the compressor. Expected normal range is less than 95 Hz. Vibration >= 95 Hz indicates mechanical wear or loose mounts.
 - Discharge Line Temp (Outlet Compressor Temp): Leaving the compressor. Expected normal range is 50-70 °C. Abnormally high temps suggest a dirty condenser coil or low refrigerant.
 - Suction Line Temp (Inlet Compressor Temp): Leaving the indoor coil. Expected normal range is 8-17 °C. Temperatures < 8 °C suggest evaporator freezing risk.
 - Dust Sensor: Located behind the front filter. Expected normal range is 0-340 µg/m³. Dust > 340 µg/m³ indicates a dirty filter.
-- Power Monitor: Main input. Power > 1820W suggests an overworked compressor or capacitor failing. Power < 1700W (but > 0) suggests the fan is running but the compressor failed to start. Current > 8.2A suggests overloading; current < 7.6A suggests underload or failed start.
+- Power Monitor: Main input. Power > 1860W suggests an overworked compressor or capacitor failing. Power < 1700W (but > 0) suggests the fan is running but the compressor failed to start. Current > 8.8A suggests overloading; current < 7.6A suggests underload or failed start.
 - Refrigerant Leak Signature: Triggered when there is a combination of: Low Current (< 7.6A), Low Power (< 1700W), High Output Air Temp (> 25°C), and High Compressor Outlet Temp (> 70°C). Diagnosing a Refrigerant Leak maps to "Maintenance" (Need Maintenance) action.
 
 INSTRUCTIONS:
