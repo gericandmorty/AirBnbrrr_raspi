@@ -338,12 +338,15 @@
     const SENSOR_INFO = {
       pzem_power:        { label: 'Power Usage',              icon: 'zap',         hint: 'How much electricity the AC is drawing' },
       pzem_voltage:      { label: 'Electricity Supply',       icon: 'plug',        hint: 'Voltage from the wall outlet' },
+      pzem_current:      { label: 'Operating Current',        icon: 'activity',    hint: 'Operating current draw of the AC unit' },
       pzem_frequency:    { label: 'Power Grid Stability',     icon: 'activity',    hint: 'Stability of the electrical supply' },
       pzem_power_factor: { label: 'Motor Efficiency',         icon: 'gauge',       hint: 'How efficiently the motor uses power' },
+      dht_temp:          { label: 'AC Output Temperature',    icon: 'thermometer', hint: 'Temperature of supply air' },
+      dht_humidity:      { label: 'AC Output Humidity',       icon: 'droplets',    hint: 'Humidity of supply air' },
       ds18b20_temp1:     { label: 'Compressor Heat (outlet)', icon: 'thermometer', hint: 'Temperature leaving the compressor' },
       ds18b20_temp2:     { label: 'Cooling Pipe Temperature', icon: 'snowflake',   hint: 'Temperature of the refrigerant return line' },
       vibration:         { label: 'Compressor Vibration',     icon: 'vibrate',     hint: 'How much the compressor is shaking' },
-      dust_sensor:       { label: 'Air Filter Condition',     icon: 'wind',        hint: 'How clean or dirty the front filter is' },
+      dust_sensor:       { label: 'Dust Level',               icon: 'wind',        hint: 'Dust concentration behind front filter' },
     };
 
     const SEV_LABEL = { Critical:'Urgent', High:'High', Medium:'Caution', Low:'Note', Normal:'All Clear' };
