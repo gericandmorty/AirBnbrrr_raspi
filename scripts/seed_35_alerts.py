@@ -161,21 +161,37 @@ def seed_alerts():
             tel = dict(tmpl["base_telemetry"])
             tel["pzem_voltage"] = round(tel["pzem_voltage"] + random.uniform(-1.0, 1.0), 1)
             
-            # Compute current based on power and voltage
-            tel["pzem_power"] = round(tel["pzem_power"] + random.uniform(-20.0, 20.0), 1)
+            # Apply power jitter but clamp above threshold if base is already at/above 1860
+            raw_power = tel["pzem_power"] + random.uniform(-10.0, 10.0)
+            if tmpl["base_telemetry"]["pzem_power"] >= 1860.0:
+                raw_power = max(raw_power, 1861.0)
+            tel["pzem_power"] = round(raw_power, 1)
+            
+            # Re-derive current from power/voltage
             tel["pzem_current"] = round(tel["pzem_power"] / tel["pzem_voltage"], 2)
+            # Clamp current above threshold if base already at/above 8.8
+            if tmpl["base_telemetry"].get("pzem_current", 0) >= 8.8:
+                tel["pzem_current"] = max(tel["pzem_current"], 8.81)
             
             tel["dht_temp"] = round(tel["dht_temp"] + random.uniform(-0.4, 0.4), 1)
             
-            # Apply offsets to specific trigger fields
-            if tel["ds18b20_temp1"] > 70.0:
-                tel["ds18b20_temp1"] = round(tel["ds18b20_temp1"] + random.uniform(-2.0, 2.0), 1)
-            if tel["ds18b20_temp2"] < 4.0:
-                tel["ds18b20_temp2"] = round(tel["ds18b20_temp2"] + random.uniform(-0.5, 0.5), 1)
-            elif tel["ds18b20_temp2"] > 17.0:
-                tel["ds18b20_temp2"] = round(tel["ds18b20_temp2"] + random.uniform(-1.5, 1.5), 1)
-            if tel["vibration"] > 90.0:
-                tel["vibration"] = round(tel["vibration"] + random.uniform(-5.0, 5.0), 1)
+            # Apply vibration jitter, clamping above 90 if template triggers vibration
+            raw_vib = tel["vibration"] + random.uniform(-3.0, 3.0)
+            if tmpl["base_telemetry"]["vibration"] >= 90.0:
+                raw_vib = max(raw_vib, 90.1)
+            tel["vibration"] = round(raw_vib, 1)
+            
+            # Humidity jitter – clamp below 80 if template triggers low humidity
+            raw_hum = tel["dht_humidity"] + random.uniform(-2.0, 2.0)
+            if tmpl["base_telemetry"]["dht_humidity"] <= 80.0:
+                raw_hum = min(raw_hum, 79.9)
+            tel["dht_humidity"] = round(raw_hum, 1)
+
+            # Dust jitter – clamp above 340 if template triggers dust
+            if tmpl["base_telemetry"].get("dust_sensor", 0) >= 340.0:
+                tel["dust_sensor"] = round(max(tel["dust_sensor"] + random.uniform(-5.0, 5.0), 340.1), 1)
+            else:
+                tel["dust_sensor"] = round(max(tel["dust_sensor"] + random.uniform(-2.0, 2.0), 0.0), 1)
                 
             # Add ac_unit label to the context
             tel["ac_unit"] = tmpl["ac_unit"]

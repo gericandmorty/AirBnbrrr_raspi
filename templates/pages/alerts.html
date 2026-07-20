@@ -391,6 +391,41 @@
       return 'Need Maintenance';
     }
 
+    function getAlertTypeName(a) {
+      try {
+        if (a.diagnoses) {
+          let parsed = typeof a.diagnoses === 'string' ? JSON.parse(a.diagnoses) : a.diagnoses;
+          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+
+          // Check rule findings first (most authoritative)
+          const ruleResult = parsed.rule_diagnoses;
+          const ruleFindings = (ruleResult && ruleResult.findings) || [];
+          if (ruleFindings.length > 0) {
+            // Sort by severity and pick the top one
+            const sevOrder = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1, 'Normal': 0 };
+            const sorted = [...ruleFindings].sort((a, b) => (sevOrder[b.severity] || 0) - (sevOrder[a.severity] || 0));
+            return sorted[0].issue || '';
+          }
+
+          // Fall back to AI diagnoses
+          let aiDiagnoses = parsed.ai_diagnoses;
+          const aiList = (aiDiagnoses && aiDiagnoses.diagnoses) || [];
+          if (aiList.length > 0) {
+            return aiList[0].issue || '';
+          }
+        }
+      } catch (e) {}
+
+      // Fall back to summary keyword extraction
+      const sum = (a.summary || '').toLowerCase();
+      if (sum.includes('heartbeat') || sum.includes('healthy')) return 'System Healthy';
+      if (sum.includes('dust') || sum.includes('filter')) return 'High Dust Concentration';
+      if (sum.includes('overheating')) return 'Compressor Overheating';
+      if (sum.includes('vibration')) return 'Abnormal Compressor Vibration';
+      if (sum.includes('humidity')) return 'Low Humidity';
+      return '';
+    }
+
     function formatTimestampPlus8Hours(timestamp) {
       if (!timestamp) return 'N/A';
 
@@ -506,9 +541,12 @@
             </div>
           </td>
           <td class="px-6 py-4 text-sm text-slate-700 whitespace-normal">
-            <div class="flex items-center">
-              <span>AC Alert:</span>
-              <span class="${getACConditionColorClass(status)}">${status}</span>
+            <div class="flex flex-col gap-0.5">
+              <div class="flex items-center gap-1">
+                <span class="text-slate-500 text-xs">AC Alert:</span>
+                <span class="font-semibold text-xs text-slate-800">${getAlertTypeName(a)}</span>
+              </div>
+              <span class="${getACConditionColorClass(status)} !ml-0">${status}</span>
             </div>
           </td>
           <td class="px-6 py-4">
@@ -537,9 +575,12 @@
               ${formattedTime}
             </div>
           </div>
-          <div class="text-sm text-slate-700 leading-relaxed break-words whitespace-normal">
-            <span>AC Alert:</span>
-            <span class="${getACConditionColorClass(status)}">${status}</span>
+          <div class="text-sm text-slate-700 leading-relaxed break-words whitespace-normal flex flex-col gap-0.5">
+            <div class="flex items-center gap-1">
+              <span class="text-slate-500 text-xs">AC Alert:</span>
+              <span class="font-semibold text-xs text-slate-800">${getAlertTypeName(a)}</span>
+            </div>
+            <span class="${getACConditionColorClass(status)} !ml-0">${status}</span>
           </div>
           <div class="flex justify-end gap-3 pt-3 border-t border-slate-100 mt-1">
             <a href="/pages/alert?id=${a.id}" class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-xl transition-colors no-underline">
