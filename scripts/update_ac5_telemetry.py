@@ -11,25 +11,48 @@ from database import get_db_connection
 from psycopg2.extras import execute_values
 
 def generate_telemetry_for_ac5(pzem_energy):
-    """Generate telemetry for AC5, where ONLY Outlet Temp, Inlet Temp, Voltage, and Power are high."""
-    power = round(random.uniform(1870.0, 1920.0), 1)  # High (> 1860 W)
-    voltage = round(random.uniform(232.0, 235.0), 1)  # High (> 231 V)
-    current = round(power / voltage, 2)               # Normal (~8.0 - 8.3 A)
+    """
+    Reduced Cooling Performance signature for AC5:
+    - Output air temp (dht_temp): warm but not extreme ~18–22 °C
+    - Inlet Compressor (ds18b20_temp2): almost same as output air, but 2–3 °C higher
+    - Outlet Compressor (ds18b20_temp1): independently 62–71 °C
+    - Dust sensor: 0–200 µg/m³
+    - Power, voltage, current all within normal range
+    """
+    # Output air temp: slightly warm (reduced cooling)
+    output_temp = round(random.uniform(18.0, 22.0), 1)
+    # Inlet compressor: 2–3 °C above the output air (close but slightly higher)
+    delta = round(random.uniform(2.0, 3.0), 1)
+    inlet_comp = round(output_temp + delta, 1)
+
+    # Outlet compressor: independently 62–71 °C
+    outlet_comp = round(random.uniform(62.0, 71.0), 1)
+
+    power   = round(random.uniform(1650.0, 1860.0), 1)   # Normal
+    voltage = round(random.uniform(225.0, 231.0), 1)      # Normal
+    current = round(power / voltage, 2)                   # Derived, stays 7.6–8.8 A
+
+    # Dust: 0–200 µg/m³ (10% chance of exactly 0)
+    if random.random() < 0.10:
+        dust = 0.00
+    else:
+        dust = round(random.uniform(1.0, 200.0), 2)
+
     return {
-        "dust_sensor": 0.00,
-        "dht_temp": round(random.uniform(26.0, 28.0), 1),       # High (> 25 °C)
-        "dht_humidity": round(random.uniform(70.0, 75.0), 1),   # Normal (<= 80%)
-        "vibration": round(random.uniform(70.0, 85.0), 1),      # Normal (< 95 Hz)
-        "ds18b20_temp1": round(random.uniform(58.0, 65.0), 1),  # Normal (50 - 70 °C)
-        "ds18b20_temp2": round(random.uniform(18.0, 20.0), 1),  # High (> 17 °C)
-        "pzem_voltage": voltage,
-        "pzem_current": current,
-        "pzem_power": power,
-        "pzem_energy": pzem_energy,
-        "pzem_frequency": round(random.uniform(59.9, 60.1), 1),
+        "dust_sensor":       dust,
+        "dht_temp":          output_temp,                              # Output air temp
+        "dht_humidity":      round(random.uniform(70.0, 78.0), 1),    # Normal (≤ 80%)
+        "vibration":         round(random.uniform(60.0, 85.0), 1),    # Normal (< 90 Hz)
+        "ds18b20_temp1":     outlet_comp,                              # Outlet compressor: 62–71 °C
+        "ds18b20_temp2":     inlet_comp,                               # Inlet compressor: output + 2–3 °C
+        "pzem_voltage":      voltage,
+        "pzem_current":      current,
+        "pzem_power":        power,
+        "pzem_energy":       pzem_energy,
+        "pzem_frequency":    round(random.uniform(59.9, 60.1), 1),
         "pzem_power_factor": round(random.uniform(0.86, 0.94), 2),
-        "ac_status": "1",
-        "ac_thermostat": "22"
+        "ac_status":         "1",
+        "ac_thermostat":     "22"
     }
 
 def update_ac5():
