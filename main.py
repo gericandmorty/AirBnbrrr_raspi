@@ -130,15 +130,17 @@ def read_root(request: Request):
 
 
 # Anomaly alert debouncer state
-ALERT_DELAY_SECONDS = float(os.environ.get("ALERT_DELAY_SECONDS", "480.0"))
+has_detected_first_anomaly = False
 alert_timer = None
 timer_lock = threading.Lock()
 
 def trigger_alert_action(data):
-	global alert_timer
+	global alert_timer, has_detected_first_anomaly
 	with timer_lock:
 		alert_timer = None
-	print(f"\n[DEBOUNCER] 8-minute delay completed. Processing anomaly alert...", flush=True)
+	# Mark that an alert has been triggered
+	has_detected_first_anomaly = True
+	print(f"\n[DEBOUNCER] Delay completed. Processing anomaly alert...", flush=True)
 	try:
 		process_anomaly(data)
 	except Exception as e:
@@ -230,6 +232,30 @@ def process_telemetry_background(payload_dict: dict):
 		print(f"\n[ERROR] Failed to save telemetry in background: {db_err}", flush=True)
 		return
 
+	# Check for real-time dust anomaly (dust > 340.0 ug/m3)
+	try:
+		dust_val = payload_dict.get("dust_sensor")
+		has_dust_anomaly = dust_val is not None and float(dust_val) > 340.0
+	except (ValueError, TypeError):
+		has_dust_anomaly = False
+
+	if has_dust_anomaly:
+		print(f"\n[DEBOUNCER] Dust anomaly detected ({dust_val} µg/m³). Processing real-time alert immediately!", flush=True)
+		# Cancel any pending non-dust alert timer
+		with timer_lock:
+			if alert_timer is not None:
+				alert_timer.cancel()
+				alert_timer = None
+		# Mark that an alert has been triggered
+		has_detected_first_anomaly = True
+		try:
+			payload_dict["ac_status"] = ac_status
+			payload_dict["ac_thermostat"] = ac_thermostat
+			process_anomaly(payload_dict)
+		except Exception as e:
+			print(f"\n[ERROR] process_anomaly failed for dust: {e}\n", flush=True)
+		return
+
 	# Perform anomaly detection on a copy of the telemetry payload
 	model_data = dict(payload_dict)
 	model_data.pop("ac_status", None)
@@ -244,8 +270,10 @@ def process_telemetry_background(payload_dict: dict):
 			# Handle debouncing with threading.Timer
 			with timer_lock:
 				if alert_timer is None:
-					print(f"\n[DEBOUNCER] Anomaly detected! Starting {ALERT_DELAY_SECONDS}s alert delay...", flush=True)
-					alert_timer = threading.Timer(ALERT_DELAY_SECONDS, trigger_alert_action, [payload_dict])
+					# 8 minutes (480s) for the first non-dust alert, 2 minutes (120s) thereafter
+					delay = 480.0 if not has_detected_first_anomaly else 120.0
+					print(f"\n[DEBOUNCER] Anomaly detected! Starting {delay}s alert delay...", flush=True)
+					alert_timer = threading.Timer(delay, trigger_alert_action, [payload_dict])
 					alert_timer.start()
 				else:
 					print("\n[DEBOUNCER] Anomaly detected, but alert timer is already running. Keeping original schedule.", flush=True)
