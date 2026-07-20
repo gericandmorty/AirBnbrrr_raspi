@@ -5,11 +5,11 @@ A deterministic, physics-based algorithm that checks sensor readings
 against hard-coded thresholds derived from the AC unit specifications.
 
 AC Unit Specifications (reference for all thresholds):
-  - Capacity     : 0.6 HP (5,400 BTU/h)
+  - Capacity     : 1.5 HP
   - Type         : Manual Window Type (Non-Inverter)
   - Refrigerant  : R410A
-  - Power Range  : 545W – 600W at full cooling
-  - Voltage      : 220V – 230V / 60 Hz / 1-Phase
+  - Power Range  : 1700W – 1820W at full cooling
+  - Voltage      : 225V – 229V / 60 Hz / 1-Phase
 """
 
 from typing import Optional
@@ -27,17 +27,17 @@ RULES = [
         "sensor":      "pzem_power",
         "label":       "Power Consumption (W)",
         "unit":        "W",
-        "normal_min":  545.0,
-        "normal_max":  600.0,
+        "normal_min":  1700.0,
+        "normal_max":  1820.0,
         "checks": [
             {
-                "condition": lambda v: v > 600.0,
-                "computed":  lambda v: f"{v:.1f} W  >  600 W threshold",
+                "condition": lambda v: v > 1820.0,
+                "computed":  lambda v: f"{v:.1f} W  >  1820 W threshold",
                 "issue":     "Overloaded Compressor or Failing Run Capacitor",
                 "severity":  "High",
                 "status":    "Current",
                 "root_cause": (
-                    "Power draw exceeds the rated maximum of 600 W. "
+                    "Power draw exceeds the rated maximum of 1820 W. "
                     "This indicates the compressor is working harder than normal — "
                     "typically caused by a dirty condenser coil restricting heat dissipation, "
                     "low refrigerant forcing the compressor to cycle longer, "
@@ -50,13 +50,13 @@ RULES = [
                 ),
             },
             {
-                "condition": lambda v: 0 < v < 545.0,
-                "computed":  lambda v: f"{v:.1f} W  <  545 W threshold",
+                "condition": lambda v: 0 < v < 1700.0,
+                "computed":  lambda v: f"{v:.1f} W  <  1700 W threshold",
                 "issue":     "Compressor Failed to Start (Fan-Only Mode Suspected)",
                 "severity":  "High",
                 "status":    "Current",
                 "root_cause": (
-                    "Power draw is significantly below 545 W but above 0 W, "
+                    "Power draw is significantly below 1700 W but above 0 W, "
                     "which means only the fan motor (≈50–80 W) is running. "
                     "The compressor did not start. Common causes: failed start capacitor, "
                     "stuck contactor, open compressor winding, or incorrect thermostat mode."
@@ -93,40 +93,152 @@ RULES = [
         "sensor":      "pzem_voltage",
         "label":       "Supply Voltage (V)",
         "unit":        "V",
-        "normal_min":  210.0,
-        "normal_max":  240.0,
+        "normal_min":  225.0,
+        "normal_max":  231.0,
         "checks": [
             {
-                "condition": lambda v: v < 210.0,
-                "computed":  lambda v: f"{v:.1f} V  <  210 V threshold",
+                "condition": lambda v: v < 225.0,
+                "computed":  lambda v: f"{v:.1f} V  <  225 V threshold",
                 "issue":     "Undervoltage — Risk of Motor Overheating",
                 "severity":  "Medium",
                 "status":    "Current",
                 "root_cause": (
-                    "Supply voltage is below the safe operating minimum of 210 V. "
+                    "Supply voltage is below the safe operating minimum of 225 V. "
                     "Low voltage forces the compressor motor to draw higher current "
                     "to maintain torque, causing excess heat and accelerating winding degradation."
                 ),
                 "recommended_action": (
                     "1. Report the low voltage to your electrical utility. "
                     "2. Consider installing a voltage stabilizer/AVR. "
-                    "3. Avoid running the AC unit until voltage stabilizes above 215 V."
+                    "3. Avoid running the AC unit until voltage stabilizes above 225 V."
                 ),
             },
             {
-                "condition": lambda v: v > 240.0,
-                "computed":  lambda v: f"{v:.1f} V  >  240 V threshold",
+                "condition": lambda v: v > 231.0,
+                "computed":  lambda v: f"{v:.1f} V  >  231 V threshold",
                 "issue":     "Overvoltage — Risk of Component Damage",
                 "severity":  "Medium",
                 "status":    "Current",
                 "root_cause": (
-                    "Supply voltage exceeds 240 V. High voltage stresses capacitors, "
+                    "Supply voltage exceeds 231 V. High voltage stresses capacitors, "
                     "control PCBs, and motor windings, significantly shortening their service life."
                 ),
                 "recommended_action": (
                     "1. Consult your electrical utility about the high voltage. "
                     "2. Install a surge protector or voltage regulator. "
                     "3. Monitor capacitor condition more frequently."
+                ),
+            },
+        ],
+    },
+
+    # ── Grid Current / AMPERE (A) ──────────────────────────────
+    {
+        "sensor":      "pzem_current",
+        "label":       "AC Operating Current (A)",
+        "unit":        "A",
+        "normal_min":  7.6,
+        "normal_max":  8.2,
+        "checks": [
+            {
+                "condition": lambda v: v > 8.2,
+                "computed":  lambda v: f"{v:.2f} A  >  8.2 A threshold",
+                "issue":     "High AC Current — Overloaded Compressor Winding",
+                "severity":  "High",
+                "status":    "Current",
+                "root_cause": (
+                    "Current draw exceeds 8.2 A. This indicates the compressor motor "
+                    "is under high mechanical load, operating with a weak run capacitor, "
+                    "or experiencing elevated high-side refrigerant pressures."
+                ),
+                "recommended_action": (
+                    "1. Check the condenser coil for blockages and clean it. "
+                    "2. Verify run capacitor capacitance. "
+                    "3. Have a technician inspect refrigerant pressures."
+                ),
+            },
+            {
+                "condition": lambda v: 0.1 < v < 7.6,
+                "computed":  lambda v: f"{v:.2f} A  <  7.6 A threshold",
+                "issue":     "Low AC Current — Compressor Underload or Failure to Start",
+                "severity":  "High",
+                "status":    "Current",
+                "root_cause": (
+                    "Current draw is below 7.6 A while the unit is supposedly running. "
+                    "This suggests the compressor failed to start (only the fan is drawing power) "
+                    "or is running completely underloaded due to a total loss of refrigerant."
+                ),
+                "recommended_action": (
+                    "1. Confirm if the compressor is active and blowing warm air from condenser. "
+                    "2. Check thermostat and start components. "
+                    "3. Inspect for refrigerant leaks."
+                ),
+            },
+        ],
+    },
+
+    # ── OUTPUT TEMP / DHT TEMP (°C) ─────────────────────────────
+    {
+        "sensor":      "dht_temp",
+        "label":       "AC Output Temperature (°C)",
+        "unit":        "°C",
+        "normal_min":  7.0,
+        "normal_max":  25.0,
+        "checks": [
+            {
+                "condition": lambda v: v > 25.0,
+                "computed":  lambda v: f"{v:.1f} °C  >  25.0 °C threshold",
+                "issue":     "Poor Cooling Output — High Supply Temp",
+                "severity":  "High",
+                "status":    "Current",
+                "root_cause": (
+                    "AC output air temperature is warmer than 25 °C. This suggests "
+                    "reduced cooling performance due to a dirty evaporator filter, "
+                    "refrigerant loss, or restricted airflow."
+                ),
+                "recommended_action": (
+                    "1. Clean or replace the front air filter. "
+                    "2. Check if the compressor is running. "
+                    "3. Have a technician verify system pressures."
+                ),
+            },
+            {
+                "condition": lambda v: v < 7.0 and v > 0,
+                "computed":  lambda v: f"{v:.1f} °C  <  7.0 °C threshold",
+                "issue":     "Low Output Temp — Overcooling or Freezing Risk",
+                "severity":  "Medium",
+                "status":    "Current",
+                "root_cause": (
+                    "AC output temperature is below 7 °C, which is colder than expected. "
+                    "This can lead to evaporator coil icing if return air is restricted."
+                ),
+                "recommended_action": (
+                    "1. Verify return air filter is clean. "
+                    "2. Ensure fan speed is set properly and not restricted."
+                ),
+            },
+        ],
+    },
+
+    # ── HUMIDITY / DHT HUMIDITY (%) ──────────────────────────────
+    {
+        "sensor":      "dht_humidity",
+        "label":       "AC Output Humidity (%)",
+        "unit":        "%",
+        "normal_min":  95.0,
+        "normal_max":  100.0,
+        "checks": [
+            {
+                "condition": lambda v: v < 95.0,
+                "computed":  lambda v: f"{v:.1f}%  <  95% threshold",
+                "issue":     "Low Output Humidity — Inefficient Dehumidification",
+                "severity":  "Medium",
+                "status":    "Current",
+                "root_cause": (
+                    "Humidity level of the supply air is below 95%."
+                ),
+                "recommended_action": (
+                    "1. Verify the thermostat setpoint and clean the evaporator coil."
                 ),
             },
         ],
@@ -188,22 +300,22 @@ RULES = [
         ],
     },
 
-    # ── DISCHARGE LINE TEMPERATURE (ds18b20_temp1) ─────────────
+    # ── DISCHARGE LINE TEMPERATURE / OUTLET COMPRESSOR TEMP (ds18b20_temp1) ──
     {
         "sensor":      "ds18b20_temp1",
         "label":       "Discharge Line Temperature (°C)",
         "unit":        "°C",
-        "normal_min":  55.0,
-        "normal_max":  90.0,
+        "normal_min":  50.0,
+        "normal_max":  70.0,
         "checks": [
             {
-                "condition": lambda v: v > 90.0,
-                "computed":  lambda v: f"{v:.1f} °C  >  90 °C threshold",
+                "condition": lambda v: v > 70.0,
+                "computed":  lambda v: f"{v:.1f} °C  >  70 °C threshold",
                 "issue":     "High Discharge Temp — Dirty Condenser or Low Refrigerant",
                 "severity":  "High",
                 "status":    "Current",
                 "root_cause": (
-                    "Compressor discharge line temperature exceeds 90 °C. "
+                    "Compressor discharge line temperature exceeds 70 °C. "
                     "High discharge temps indicate either: (1) the condenser coil is dirty "
                     "and cannot reject heat efficiently, or (2) refrigerant charge is low, "
                     "causing the refrigeration cycle to work harder."
@@ -215,8 +327,8 @@ RULES = [
                 ),
             },
             {
-                "condition": lambda v: v < 55.0 and v > 0,
-                "computed":  lambda v: f"{v:.1f} °C  <  55 °C threshold",
+                "condition": lambda v: v < 50.0 and v > 0,
+                "computed":  lambda v: f"{v:.1f} °C  <  50 °C threshold",
                 "issue":     "Low Discharge Temp — Possible Refrigerant Undercharge",
                 "severity":  "Medium",
                 "status":    "Current",
@@ -233,22 +345,22 @@ RULES = [
         ],
     },
 
-    # ── SUCTION LINE TEMPERATURE (ds18b20_temp2) ───────────────
+    # ── SUCTION LINE TEMPERATURE / INLET COMPRESSOR TEMP (ds18b20_temp2) ─────
     {
         "sensor":      "ds18b20_temp2",
         "label":       "Suction Line Temperature (°C)",
         "unit":        "°C",
-        "normal_min":  5.0,
-        "normal_max":  20.0,
+        "normal_min":  8.0,
+        "normal_max":  17.0,
         "checks": [
             {
-                "condition": lambda v: v < 4.0 and v > -10,
-                "computed":  lambda v: f"{v:.1f} °C  <  4 °C (freezing threshold)",
-                "issue":     "Evaporator Freezing — Blocked Airflow or Low Refrigerant",
+                "condition": lambda v: v < 8.0 and v > -10,
+                "computed":  lambda v: f"{v:.1f} °C  <  8 °C threshold",
+                "issue":     "Low Suction Temp — Evaporator Freezing Risk",
                 "severity":  "High",
                 "status":    "Current",
                 "root_cause": (
-                    "Suction line temperature near or below 4 °C indicates the evaporator "
+                    "Suction line temperature below 8 °C indicates the evaporator "
                     "coil is icing up. Causes: (1) severely dirty air filter restricting airflow, "
                     "(2) dirty evaporator coil, or (3) low refrigerant charge."
                 ),
@@ -259,15 +371,15 @@ RULES = [
                 ),
             },
             {
-                "condition": lambda v: v > 20.0,
-                "computed":  lambda v: f"{v:.1f} °C  >  20 °C threshold",
+                "condition": lambda v: v > 17.0,
+                "computed":  lambda v: f"{v:.1f} °C  >  17 °C threshold",
                 "issue":     "High Suction Temp — Insufficient Cooling / Refrigerant Loss",
                 "severity":  "Medium",
                 "status":    "Current",
                 "root_cause": (
-                    "Suction line temperature above 20 °C indicates the refrigerant "
+                    "Suction line temperature above 17 °C indicates the refrigerant "
                     "is absorbing too little heat — often a sign of refrigerant loss, "
-                    "very high ambient temperature, or a partially blocked metering device."
+                    "very high room temperature, or a partially blocked metering device."
                 ),
                 "recommended_action": (
                     "1. Check ambient temperature — above 35 °C room temps stress any AC unit. "
@@ -278,22 +390,22 @@ RULES = [
         ],
     },
 
-    # ── VIBRATION (g) ──────────────────────────────────────────
+    # ── VIBRATION (Hz) ─────────────────────────────────────────
     {
         "sensor":      "vibration",
-        "label":       "Compressor Vibration (g)",
-        "unit":        "g",
-        "normal_min":  0.0,
-        "normal_max":  0.5,
+        "label":       "Compressor Vibration (Hz)",
+        "unit":        "Hz",
+        "normal_min":  60.0,
+        "normal_max":  90.0,
         "checks": [
             {
-                "condition": lambda v: v > 0.5,
-                "computed":  lambda v: f"{v:.2f} g  >  0.5 g threshold",
+                "condition": lambda v: v > 90.0,
+                "computed":  lambda v: f"{v:.1f} Hz  >  90 Hz threshold",
                 "issue":     "Excessive Compressor Vibration — Mechanical Wear or Loose Mount",
                 "severity":  "Medium",
                 "status":    "Current",
                 "root_cause": (
-                    "Compressor vibration above 0.5 g is abnormal. "
+                    "Compressor vibration above 90 Hz is abnormal. "
                     "Possible causes: worn compressor internal components, "
                     "loose mounting bolts, or deteriorated rubber anti-vibration grommets."
                 ),
@@ -309,19 +421,19 @@ RULES = [
     # ── DUST SENSOR ────────────────────────────────────────────
     {
         "sensor":      "dust_sensor",
-        "label":       "Dust Level (behind filter)",
-        "unit":        "raw units",
-        "normal_min":  0,
-        "normal_max":  300,
+        "label":       "Dust Level",
+        "unit":        "µg/m³",
+        "normal_min":  0.0,
+        "normal_max":  340.0,
         "checks": [
             {
-                "condition": lambda v: v > 300,
-                "computed":  lambda v: f"{v:.0f}  >  300 (dirty filter threshold)",
+                "condition": lambda v: v > 340.0,
+                "computed":  lambda v: f"{v:.1f} µg/m³  >  340 µg/m³ threshold",
                 "issue":     "Dirty Air Filter — Restricted Airflow",
                 "severity":  "Low",
                 "status":    "Current",
                 "root_cause": (
-                    "The dust sensor behind the front filter reads above 300, "
+                    "The dust sensor behind the front filter reads above 340 µg/m³, "
                     "indicating a dirty filter that restricts return airflow. "
                     "Reduced airflow leads to a warmer evaporator coil, lower cooling capacity, "
                     "and over time, compressor overwork."

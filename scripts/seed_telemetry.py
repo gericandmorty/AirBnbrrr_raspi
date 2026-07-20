@@ -43,7 +43,7 @@ def random_sample(i: int):
         "dust_sensor": round(random.uniform(0.0, 1.0), 3),
         "dht_temp": round(random.uniform(15.0, 35.0), 2),
         "dht_humidity": round(random.uniform(20.0, 90.0), 2),
-        "vibration": round(random.uniform(0.0, 5.0), 3),
+        "vibration": round(random.uniform(60.0, 90.0), 2) if i % 3 != 0 else 0.0,
         "ds18b20_temp1": round(random.uniform(10.0, 40.0), 2),
         "ds18b20_temp2": round(random.uniform(10.0, 40.0), 2),
         "pzem_voltage": round(random.uniform(110.0, 240.0), 2),

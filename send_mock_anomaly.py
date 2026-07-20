@@ -12,12 +12,12 @@ payload = {
     "dust_sensor": 350.0,          # > 300: Dirty Air Filter
     "dht_temp": 32.5,
     "dht_humidity": 78.0,
-    "vibration": 0.82,             # > 0.5: Excessive Compressor Vibration
+    "vibration": 125.0,             # > 100: Excessive Compressor Vibration
     "ds18b20_temp1": 96.5,         # > 90: High Discharge Temp (Compressor Heat)
     "ds18b20_temp2": 2.5,          # < 4.0: Evaporator Freezing (Cooling Pipe Temp)
     "pzem_voltage": 204.0,         # < 210: Undervoltage
-    "pzem_current": 3.3,
-    "pzem_power": 673.2,           # > 600: Overloaded Compressor / High Power Draw
+    "pzem_current": 9.2,
+    "pzem_power": 1950.0,          # > 1820: Overloaded Compressor / High Power Draw
     "pzem_energy": 1245.0,
     "pzem_frequency": 60.0,
     "pzem_power_factor": 0.72,     # < 0.85: Low Power Factor

@@ -73,19 +73,20 @@ def generate_combined_prompt(telemetry_data):
     return f"""You are an expert HVAC diagnostic AI. Your task is to analyze IoT sensor telemetry from a Window Type Air Conditioner and perform Proactive Fault Detection. You are not limited to identifying a single issue; you should detect multiple possible failures currently affecting the AC, as well as predict possible future failures based on the telemetry trends.
 
 SYSTEM SPECIFICATIONS:
-- Capacity: 0.6 HP (5,697 kJ/h or 5,400 BTU/h)
+- Capacity: 1.5 HP
 - Type: Manual Window Type (Non-Inverter)
 - Refrigerant: R410A
-- Expected Power Consumption: 545W - 600W
-- Voltage/Frequency: 220-230V / 60Hz / 1Ph
+- Expected Power Consumption: 1700W - 1820W
+- Expected Current: 7.6A - 8.2A
+- Voltage/Frequency: 225-231V / 60Hz / 1Ph
 
 SENSOR CONTEXT & PLACEMENT:
-- Dust Sensor: Located behind the front filter. High values indicate a dirty filter restricting airflow.
-- Return Air (AC Output Temp/Humidity): Measures ambient air entering the unit.
-- Compressor Vibration: Mounted on the compressor. High vibration indicates loose mounts, mechanical wear, or hard starting.
-- Discharge Line Temp: Leaving the compressor. Abnormally high temps suggest a dirty condenser coil or low refrigerant.
-- Suction Line Temp: Leaving the indoor coil. Freezing/very low temps suggest restricted airflow (dirty filter/evaporator) or a stuck contactor.
-- Power Monitor: Main input. Power > 600W suggests an overworked compressor or capacitor failing. Power < 545W (but > 0) suggests the fan is running but the compressor failed to start.
+- Return Air (AC Output Temp/Humidity): Measures room/supply air. Expected normal range is 7-25 °C and 95-100% humidity.
+- Compressor Vibration: Mounted on the compressor. Expected normal range is 60-90 Hz. Vibration > 90 Hz indicates mechanical wear or loose mounts.
+- Discharge Line Temp (Outlet Compressor Temp): Leaving the compressor. Expected normal range is 50-70 °C. Abnormally high temps suggest a dirty condenser coil or low refrigerant.
+- Suction Line Temp (Inlet Compressor Temp): Leaving the indoor coil. Expected normal range is 8-17 °C. Temperatures < 8 °C suggest evaporator freezing risk.
+- Dust Sensor: Located behind the front filter. Expected normal range is 0-340 µg/m³. Dust > 340 µg/m³ indicates a dirty filter.
+- Power Monitor: Main input. Power > 1820W suggests an overworked compressor or capacitor failing. Power < 1700W (but > 0) suggests the fan is running but the compressor failed to start. Current > 8.2A suggests overloading; current < 7.6A suggests underload or failed start.
 
 INSTRUCTIONS:
 Analyze the provided telemetry data. Provide a structured response detailing all current and potential future issues.
@@ -150,7 +151,7 @@ def process_anomaly(anomaly_data):
         "Dust Level": anomaly_data.pop("dust_sensor", None),
         "Return Air Temperature (C)": anomaly_data.pop("dht_temp", None),
         "Return Air Humidity (%)": anomaly_data.pop("dht_humidity", None),
-        "Compressor Vibration (g)": anomaly_data.pop("vibration", None),
+        "Compressor Vibration (Hz)": anomaly_data.pop("vibration", None),
         "Compressor Discharge Line Temp (C)": anomaly_data.pop("ds18b20_temp1", None),
         "Compressor Suction Line Temp (C)": anomaly_data.pop("ds18b20_temp2", None),
         "Voltage (V)": anomaly_data.pop("pzem_voltage", None),

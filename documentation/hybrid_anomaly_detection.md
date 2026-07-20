@@ -311,22 +311,22 @@ RULES = [
         ],
     },
 
-    # ── VIBRATION (g) ──
+    # ── VIBRATION (Hz) ──
     {
         "sensor":      "vibration",
-        "label":       "Compressor Vibration (g)",
-        "unit":        "g",
+        "label":       "Compressor Vibration (Hz)",
+        "unit":        "Hz",
         "normal_min":  0.0,
-        "normal_max":  0.5,
+        "normal_max":  100.0,
         "checks": [
             {
-                "condition": lambda v: v > 0.5,
-                "computed":  lambda v: f"{v:.2f} g  >  0.5 g threshold",
+                "condition": lambda v: v > 100.0,
+                "computed":  lambda v: f"{v:.1f} Hz  >  100 Hz threshold",
                 "issue":     "Excessive Compressor Vibration — Mechanical Wear or Loose Mount",
                 "severity":  "Medium",
                 "status":    "Current",
                 "root_cause": (
-                    "Compressor vibration above 0.5 g is abnormal. "
+                    "Compressor vibration above 100 Hz is abnormal. "
                     "Possible causes: worn compressor internal components, "
                     "loose mounting bolts, or deteriorated rubber anti-vibration grommets."
                 ),
@@ -342,19 +342,19 @@ RULES = [
     # ── DUST SENSOR ──
     {
         "sensor":      "dust_sensor",
-        "label":       "Dust Level (behind filter)",
-        "unit":        "raw units",
-        "normal_min":  0,
-        "normal_max":  300,
+        "label":       "Dust Level",
+        "unit":        "µg/m³",
+        "normal_min":  0.0,
+        "normal_max":  340.0,
         "checks": [
             {
-                "condition": lambda v: v > 300,
-                "computed":  lambda v: f"{v:.0f}  >  300 (dirty filter threshold)",
+                "condition": lambda v: v > 340.0,
+                "computed":  lambda v: f"{v:.1f} µg/m³  >  340 µg/m³ threshold",
                 "issue":     "Dirty Air Filter — Restricted Airflow",
                 "severity":  "Low",
                 "status":    "Current",
                 "root_cause": (
-                    "The dust sensor behind the front filter reads above 300, "
+                    "The dust sensor behind the front filter reads above 340 µg/m³, "
                     "indicating a dirty filter that restricts return airflow. "
                     "Reduced airflow leads to a warmer evaporator coil, lower cooling capacity, "
                     "and over time, compressor overwork."
@@ -504,56 +504,64 @@ Here are the 8 diagnostic rules the algorithm uses, explained in plain language:
 
 ### 1. Power Consumption Check (`pzem_power`)
 This checks the actual electrical work being done by the AC unit.
-* **Normal Range**: 545.0 W to 600.0 W (rated range of the 0.6 HP compressor).
+* **Normal Range**: 1700.0 W to 1820.0 W (rated range of the 1.5 HP compressor).
 * **Checks**:
-  * **Over 600.0 W (High Severity)**: The unit is drawing too much power. This means the compressor is struggling under high pressure, likely due to a dirty condenser coil blocking airflow or a degrading run capacitor causing the motor to draw extra power.
-  * **Between 0.0 W and 545.0 W (High Severity)**: Suspects the compressor failed to start. Only the fan is drawing power (≈50–80W) but no cooling is happening. This is usually caused by a bad starter capacitor or a stuck thermostat mode.
+  * **Over 1820.0 W (High Severity)**: The unit is drawing too much power. This means the compressor is struggling under high pressure, likely due to a dirty condenser coil blocking airflow or a degrading run capacitor causing the motor to draw extra power.
+  * **Between 0.0 W and 1700.0 W (High Severity)**: Suspects the compressor failed to start. Only the fan is drawing power (≈50–80W) but no cooling is happening. This is usually caused by a bad starter capacitor or a stuck thermostat mode.
   * **Exactly 0.0 W (Critical Severity)**: No electricity is being drawn. The AC is completely off, unplugged, or has tripped a circuit breaker.
 
 ### 2. Supply Voltage Check (`pzem_voltage`)
 This monitors the grid power quality feeding the air conditioner.
-* **Normal Range**: 210.0 V to 240.0 V.
+* **Normal Range**: 225.0 V to 231.0 V.
 * **Checks**:
-  * **Under 210.0 V (Medium Severity)**: Low voltage. This is dangerous because motors draw more current to compensate for low voltage, causing components to overheat and rapidly wear out.
-  * **Over 240.0 V (Medium Severity)**: Overvoltage. High electrical pressure that stresses circuit boards, capacitors, and motor windings.
+  * **Under 225.0 V (Medium Severity)**: Low voltage. This is dangerous because motors draw more current to compensate for low voltage, causing components to overheat and rapidly wear out.
+  * **Over 231.0 V (Medium Severity)**: Overvoltage. High electrical pressure that stresses circuit boards, capacitors, and motor windings.
 
-### 3. Grid Frequency Check (`pzem_frequency`)
-Checks the stability of the power grid.
-* **Normal Range**: 59.0 Hz to 61.0 Hz (standard grid frequency is 60 Hz).
+### 3. Grid Current Check (`pzem_current`)
+Monitors current draw of the AC unit.
+* **Normal Range**: 7.6 A to 8.2 A.
 * **Checks**:
-  * **Outside 59–61 Hz (Low Severity)**: Indicates minor power grid instability. This can make the AC motor run slightly slower or faster, decreasing efficiency.
+  * **Over 8.2 A (High Severity)**: Overcurrent from compressor motor strain.
+  * **Under 7.6 A (High Severity)**: Low current indicating failed start (only fan active) or refrigerant leak underload.
 
-### 4. Power Factor Check (`pzem_power_factor`)
-Monitors the efficiency of electricity usage.
-* **Normal Range**: 0.85 to 1.00.
+### 4. Output Temperature Check (`dht_temp`)
+Monitors temperature of air supplied by the AC.
+* **Normal Range**: 7.0 °C to 25.0 °C.
 * **Checks**:
-  * **Under 0.85 (Medium Severity)**: Low power factor. This suggests the AC motor is drawing excessive current compared to the actual cooling power produced. In non-inverter ACs, this is a strong early indicator that the run capacitor is degrading.
+  * **Over 25.0 °C (High Severity)**: Poor cooling.
+  * **Under 7.0 °C (Medium Severity)**: Freezing risk.
 
-### 5. Discharge Line Temperature (`ds18b20_temp1`)
+### 5. Output Humidity Check (`dht_humidity`)
+Monitors humidity of air supplied by the AC.
+* **Normal Range**: 95.0% to 100.0%.
+* **Checks**:
+  * **Under 95.0% (Medium Severity)**: Dehumidification inefficiency.
+
+### 6. Discharge Line Temperature / Outlet Compressor Temp (`ds18b20_temp1`)
 Measures the temperature of the hot refrigerant gas leaving the compressor.
-* **Normal Range**: 55.0 °C to 90.0 °C.
+* **Normal Range**: 50.0 °C to 70.0 °C.
 * **Checks**:
-  * **Over 90.0 °C (High Severity)**: The compressor is running extremely hot. The condenser coil is likely choked with dust and can't release heat, or the system is low on refrigerant.
-  * **Under 55.0 °C (Medium Severity)**: The compressor is active, but the refrigerant is not heating up. This suggests a low refrigerant charge (leak) or lack of pressure build-up.
+  * **Over 70.0 °C (High Severity)**: The compressor is running extremely hot. The condenser coil is likely choked with dust and can't release heat, or the system is low on refrigerant.
+  * **Under 50.0 °C (Medium Severity)**: The compressor is active, but the refrigerant is not heating up. This suggests a low refrigerant charge (leak) or lack of pressure build-up.
 
-### 6. Suction Line Temperature (`ds18b20_temp2`)
+### 7. Suction Line Temperature / Inlet Compressor Temp (`ds18b20_temp2`)
 Measures the temperature of the cold refrigerant returning from the indoor cooling coil.
-* **Normal Range**: 5.0 °C to 20.0 °C.
+* **Normal Range**: 8.0 °C to 17.0 °C.
 * **Checks**:
-  * **Under 4.0 °C (High Severity)**: The cooling coil is freezing up and turning to ice. This is highly dangerous as liquid refrigerant can flow back and destroy the compressor. Usually caused by a completely blocked air filter.
-  * **Over 20.0 °C (Medium Severity)**: The cold return pipe is warm. This indicates that the air conditioner is not absorbing heat from the room, likely due to severe refrigerant loss.
+  * **Under 8.0 °C (High Severity)**: The cooling coil is freezing up and turning to ice. Usually caused by a completely blocked air filter.
+  * **Over 17.0 °C (Medium Severity)**: The cold return pipe is warm. This indicates that the air conditioner is not absorbing heat from the room, likely due to severe refrigerant loss.
 
-### 7. Compressor Vibration Check (`vibration`)
+### 8. Compressor Vibration Check (`vibration`)
 Measures the physical shaking of the compressor.
-* **Normal Range**: 0.0 g to 0.5 g.
+* **Normal Range**: 60.0 Hz to 90.0 Hz.
 * **Checks**:
-  * **Over 0.5 g (Medium Severity)**: Excessive shaking. Indicates that the rubber vibration mounts have hardened/cracked, or the mounting bolts have shaken loose.
+  * **Over 90.0 Hz (Medium Severity)**: Excessive shaking. Indicates that the rubber vibration mounts have hardened/cracked, or the mounting bolts have shaken loose.
 
-### 8. Dust Level Check (`dust_sensor`)
+### 9. Dust Level Check (`dust_sensor`)
 Monitors dust levels inside the air intake.
-* **Normal Range**: 0 to 300.
+* **Normal Range**: 0.0 µg/m³ to 340.0 µg/m³.
 * **Checks**:
-  * **Over 300 (Low Severity)**: The air filter is dirty and clogged, restricting airflow. This causes the AC to work harder and reduces cooling capacity.
+  * **Over 340.0 µg/m³ (Low Severity)**: The air filter is dirty and clogged, restricting airflow. This causes the AC to work harder and reduces cooling capacity.
 
 
 ### 9. Compressor Suction Pressure (`compressor_suction_pressure`)
@@ -759,7 +767,7 @@ python send_mock_anomaly.py
 | `pzem_power_factor` | 0.72 | Capacitor Degradation (Medium) |
 | `ds18b20_temp1` | 96.5 °C | High Discharge Temp (High) |
 | `ds18b20_temp2` | 2.5 °C | Evaporator Freezing (High) |
-| `vibration` | 0.82 g | Excessive Vibration (Medium) |
+| `vibration` | 125.0 Hz | Excessive Vibration (Medium) |
 | `dust_sensor` | 350 | Dirty Filter (Low) |
 | `pzem_frequency` | 60.0 Hz | **PASS** — within range |
 

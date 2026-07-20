@@ -17,12 +17,12 @@ SIMULATED = {
     "dust_sensor":        480.0,   # > 300 -> dirty filter
     "dht_temp":           28.5,
     "dht_humidity":       72.0,
-    "vibration":          0.87,    # > 0.5 -> excessive vibration
+    "vibration":          125.0,   # > 100 -> excessive vibration
     "ds18b20_temp1":      96.3,    # > 90C -> high discharge temp
     "ds18b20_temp2":      2.1,     # < 4C  -> evaporator freezing
     "pzem_voltage":       207.4,   # < 210V -> undervoltage
-    "pzem_current":       3.1,
-    "pzem_power":         651.2,   # > 600W -> compressor overload
+    "pzem_current":       9.2,
+    "pzem_power":         1950.0,  # > 1820W -> compressor overload
     "pzem_energy":        1.24,
     "pzem_frequency":     60.1,    # within range -> PASS
     "pzem_power_factor":  0.71,    # < 0.85 -> capacitor degradation
