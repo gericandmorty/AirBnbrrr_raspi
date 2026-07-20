@@ -361,6 +361,9 @@
       }
       
       const sum = (a.summary || '').toLowerCase();
+      if (sum.includes('heartbeat') || sum.includes('healthy') || sum.includes('normal')) {
+        return 'Healthy';
+      }
       if (sum.includes('freezing') || sum.includes('filter') || sum.includes('clean')) {
         return 'Need Cleaning';
       }
