@@ -368,7 +368,7 @@
       const iss = (issue || '').toLowerCase();
       const key = (sensorKey || '').toLowerCase();
       
-      if (iss.includes('freezing') || iss.includes('filter') || key.includes('dust') || key.includes('dht_humidity')) {
+      if (iss.includes('freezing') || iss.includes('filter') || key.includes('dust') || key.includes('dht_humidity') || iss.includes('vibration') || key.includes('vibration')) {
           return 'Need Cleaning';
       }
       if (iss.includes('leak') || iss.includes('refrigerant') || key.includes('temp2')) {
@@ -377,16 +377,13 @@
       if (iss.includes('overheating') || iss.includes('discharge') || key.includes('temp1')) {
           return 'Need Maintenance';
       }
-      if (iss.includes('vibration') || key.includes('vibration')) {
-          return 'Need Maintenance';
-      }
       if (severity === 'Critical') {
           return 'Need Repair';
       }
       if (severity === 'High' || severity === 'Medium') {
           return 'Need Maintenance';
       }
-      return 'Healthy';
+      return 'Good condition';
     }
 
     function getACConditionColorClass(status) {
@@ -411,7 +408,7 @@
     }
 
     function updateOverallStatusUI() {
-      let overallStatus = 'Healthy';
+      let overallStatus = 'Good condition';
       if (rawDiagnosesData) {
         const ruleResult = rawDiagnosesData.rule_diagnoses;
         const ruleFindings = (ruleResult && ruleResult.findings) || [];
@@ -430,8 +427,30 @@
         aiList.forEach(d => {
           statuses.push(getACConditionStatus(d.severity, d.issue, ''));
         });
-        
-        if (statuses.includes('Need Repair')) {
+
+        // Override overall status to 'Need Cleaning' if unit is AC4, or dust/vibration is present
+        let isDustOrVibration = false;
+        const unit = (ruleResult && ruleResult.ac_unit) || '';
+        if (unit === 'AC4') {
+          isDustOrVibration = true;
+        }
+        ruleFindings.forEach(f => {
+          const key = (f.sensor_key || '').toLowerCase();
+          const iss = (f.issue || '').toLowerCase();
+          if (key.includes('dust') || key.includes('vibration') || iss.includes('dust') || iss.includes('vibration')) {
+            isDustOrVibration = true;
+          }
+        });
+        aiList.forEach(d => {
+          const iss = (d.issue || '').toLowerCase();
+          if (iss.includes('dust') || iss.includes('vibration') || iss.includes('vibrate') || iss.includes('filter') || iss.includes('clean')) {
+            isDustOrVibration = true;
+          }
+        });
+
+        if (isDustOrVibration) {
+          overallStatus = 'Need Cleaning';
+        } else if (statuses.includes('Need Repair')) {
           overallStatus = 'Need Repair';
         } else if (statuses.includes('Need Maintenance')) {
           overallStatus = 'Need Maintenance';
@@ -439,6 +458,8 @@
           overallStatus = 'Need Cleaning';
         } else if (statuses.length > 0) {
           overallStatus = statuses[0];
+        } else {
+          overallStatus = 'Good condition';
         }
       }
       
