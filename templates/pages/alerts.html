@@ -73,11 +73,15 @@
     <!-- Header Section -->
     <header class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h1 class="text-3xl font-bold text-slate-900 flex items-center gap-3">
+        <h1 class="text-3xl font-bold text-slate-900 flex items-center gap-3 flex-wrap">
           <div class="p-2 bg-rose-100 rounded-lg">
             <i data-lucide="bell-ring" class="text-rose-600 w-6 h-6"></i>
           </div>
           System Alerts
+          <span id="raspi-status-badge" class="text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-1.5 ml-2">
+            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+            Checking Status...
+          </span>
         </h1>
         <p class="text-slate-500 mt-2 text-sm sm:text-base ml-1">
           Anomalies detected by the system monitoring service.
@@ -288,7 +292,7 @@
           return 'Need Cleaning';
       }
       if (iss.includes('leak') || iss.includes('refrigerant') || key.includes('temp2')) {
-          return 'Need Repair';
+          return 'Need Maintenance';
       }
       if (iss.includes('overheating') || iss.includes('discharge') || key.includes('temp1')) {
           return 'Need Maintenance';
@@ -296,10 +300,10 @@
       if (iss.includes('vibration') || key.includes('vibration')) {
           return 'Need Maintenance';
       }
-      if (severity === 'Critical' || severity === 'High') {
+      if (severity === 'Critical') {
           return 'Need Repair';
       }
-      if (severity === 'Medium') {
+      if (severity === 'High' || severity === 'Medium') {
           return 'Need Maintenance';
       }
       return 'Healthy';
@@ -360,10 +364,10 @@
       if (sum.includes('freezing') || sum.includes('filter') || sum.includes('clean')) {
         return 'Need Cleaning';
       }
-      if (sum.includes('leak') || sum.includes('refrigerant') || sum.includes('repair') || sum.includes('critical')) {
+      if (sum.includes('repair') || sum.includes('critical')) {
         return 'Need Repair';
       }
-      if (sum.includes('overheating') || sum.includes('vibration') || sum.includes('maintenance')) {
+      if (sum.includes('overheating') || sum.includes('vibration') || sum.includes('maintenance') || sum.includes('leak') || sum.includes('refrigerant')) {
         return 'Need Maintenance';
       }
       return 'Need Maintenance';
@@ -441,6 +445,9 @@
 
       tbody.innerHTML = '';
       mobileList.innerHTML = '';
+
+      // Call system status health check
+      checkSystemHealth(currentAlerts.length);
 
       if (currentAlerts.length === 0) {
         alertsContent.classList.add('hidden');
@@ -642,8 +649,93 @@
       }
     }
 
+    async function checkSystemHealth(alertsCount) {
+      const badge = document.getElementById('raspi-status-badge');
+      const emptyTitle = document.querySelector('#empty-state h3');
+      const emptyDesc = document.querySelector('#empty-state p');
+      const emptyIconContainer = document.querySelector('#empty-state div');
+
+      try {
+        const response = await fetch('/telemetry/latest');
+        if (!response.ok) {
+          // No telemetry available
+          badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-1.5 ml-2";
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span> Raspi Offline`;
+          
+          if (emptyTitle) emptyTitle.textContent = "Status Unknown (Raspi Offline)";
+          if (emptyDesc) emptyDesc.textContent = "No active alerts, but the Raspberry Pi is currently offline and has not sent any telemetry data.";
+          if (emptyIconContainer) {
+            emptyIconContainer.className = "inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4";
+            emptyIconContainer.innerHTML = `<i data-lucide="wifi-off" class="w-8 h-8 text-slate-500"></i>`;
+          }
+          if (window.lucide) window.lucide.createIcons();
+          return;
+        }
+
+        const data = await response.json();
+        const tsStr = data.timestamp; // 'YYYY-MM-DD HH:MM:SS'
+        if (!tsStr) {
+          badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-1.5 ml-2";
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span> Raspi Status Unknown`;
+          
+          if (emptyTitle) emptyTitle.textContent = "Status Unknown";
+          if (emptyDesc) emptyDesc.textContent = "Unable to determine Raspberry Pi active status.";
+          if (window.lucide) window.lucide.createIcons();
+          return;
+        }
+
+        // Parse date parts manually to avoid cross-browser timezone parse bugs
+        const parts = tsStr.split(/[- :]/);
+        const tsDate = new Date(parts[0], parts[1]-1, parts[2], parts[3], parts[4], parts[5]);
+        const now = new Date();
+        const diffMinutes = (now - tsDate) / (1000 * 60);
+
+        if (diffMinutes <= 30) {
+          // Raspi is ON!
+          if (alertsCount === 0) {
+            // Healthy!
+            badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 ml-2";
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Raspi ON: Healthy`;
+            
+            if (emptyTitle) emptyTitle.textContent = "All Clear — System is Healthy";
+            if (emptyDesc) emptyDesc.textContent = "The Raspberry Pi is ON and monitoring actively. No anomalies have been detected in the last 30 minutes.";
+            if (emptyIconContainer) {
+              emptyIconContainer.className = "inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 mb-4";
+              emptyIconContainer.innerHTML = `<i data-lucide="shield-check" class="w-8 h-8 text-emerald-600"></i>`;
+            }
+          } else {
+            // Anomaly present
+            badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1.5 ml-2";
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span> Raspi ON: Anomaly Detected`;
+          }
+        } else {
+          // Raspi is OFF/Offline (> 30 mins)
+          badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1.5 ml-2";
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Raspi Offline`;
+          
+          if (emptyTitle) emptyTitle.textContent = "Status Unknown (Raspi Offline)";
+          if (emptyDesc) emptyDesc.textContent = "No active alerts in log, but the Raspberry Pi has not sent any telemetry data in the last 30 minutes.";
+          if (emptyIconContainer) {
+            emptyIconContainer.className = "inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-50 mb-4";
+            emptyIconContainer.innerHTML = `<i data-lucide="wifi-off" class="w-8 h-8 text-amber-600"></i>`;
+          }
+        }
+      } catch (err) {
+        console.error("Error checking health status:", err);
+        badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-1.5 ml-2";
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span> Raspi Offline`;
+      }
+      
+      if (window.lucide) window.lucide.createIcons();
+    }
+
     // Initial Load
     fetchAlerts();
+
+    // Check system status health every 30 seconds
+    setInterval(() => {
+      checkSystemHealth(currentAlerts.length);
+    }, 30000);
   </script>
   </div>
 </body>

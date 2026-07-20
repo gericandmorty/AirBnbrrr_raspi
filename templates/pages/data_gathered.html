@@ -106,13 +106,13 @@
                 <div id="target-unit-container" class="flex flex-col opacity-50 pointer-events-none transition-all duration-200">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Target AC Unit</span>
                     <select id="targetACSelect" class="bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer">
+                        <option value="AC1">AC1</option>
                         <option value="AC2">AC2</option>
                         <option value="AC3">AC3</option>
                         <option value="AC4">AC4</option>
                         <option value="AC5">AC5</option>
                         <option value="AC6">AC6</option>
                         <option value="AC7">AC7</option>
-                        <option value="AC8">AC8</option>
                         <option value="AC9">AC9</option>
                         <option value="AC10">AC10</option>
                     </select>
@@ -124,6 +124,9 @@
         <div class="mb-6 flex flex-wrap gap-2 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm max-w-3xl">
             <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-bold transition-all border-0 cursor-pointer bg-brand-600 text-white shadow-sm" data-ac="">
                 All Units
+            </button>
+            <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC1">
+                AC1
             </button>
             <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC2">
                 AC2
@@ -142,9 +145,6 @@
             </button>
             <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC7">
                 AC7
-            </button>
-            <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC8">
-                AC8
             </button>
             <button class="ac-toggle-btn flex-1 text-center py-2.5 px-4 rounded-xl text-sm font-semibold transition-all border-0 cursor-pointer bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50" data-ac="AC9">
                 AC9
@@ -497,13 +497,13 @@
 
       const unitStatuses = {
           '': { label: 'All Units', class: 'hidden' },
+          'AC1': { label: 'Healthy', class: 'bg-emerald-50 text-emerald-700 border border-emerald-100' },
           'AC2': { label: 'Healthy', class: 'bg-emerald-50 text-emerald-700 border border-emerald-100' },
           'AC3': { label: 'Anomaly: Compressor Overheating', class: 'bg-rose-50 text-rose-700 border border-rose-100' },
           'AC4': { label: 'Anomaly: Compressor Overheating', class: 'bg-rose-50 text-rose-700 border border-rose-100' },
           'AC5': { label: 'Anomaly: Refrigerant Leak', class: 'bg-rose-50 text-rose-700 border border-rose-100' },
           'AC6': { label: 'Anomaly: Excessive Vibration', class: 'bg-rose-50 text-rose-700 border border-rose-100' },
           'AC7': { label: 'Anomaly: Evaporator Freezing', class: 'bg-rose-50 text-rose-700 border border-rose-100' },
-          'AC8': { label: 'Healthy', class: 'bg-emerald-50 text-emerald-700 border border-emerald-100' },
           'AC9': { label: 'Healthy', class: 'bg-emerald-50 text-emerald-700 border border-emerald-100' },
           'AC10': { label: 'Healthy', class: 'bg-emerald-50 text-emerald-700 border border-emerald-100' }
       };
