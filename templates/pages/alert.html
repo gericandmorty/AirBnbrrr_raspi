@@ -638,6 +638,15 @@
 
       let findings = ruleResult.findings || [];
 
+      // Sort findings by severity (Critical > High > Medium > Low)
+      const severityOrder = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1, 'Normal': 0 };
+      findings.sort((a, b) => (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0));
+
+      // Only display the single most severe check card
+      if (findings.length > 0) {
+        findings = [findings[0]];
+      }
+
       // Filter by Severity
       if (activeFilter === 'HIGH_CRITICAL') {
         findings = findings.filter(f => f.severity === 'Critical' || f.severity === 'High');
