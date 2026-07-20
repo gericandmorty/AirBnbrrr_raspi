@@ -87,6 +87,7 @@ SENSOR CONTEXT & PLACEMENT:
 - Suction Line Temp (Inlet Compressor Temp): Leaving the indoor coil. Expected normal range is 8-17 °C. Temperatures < 8 °C suggest evaporator freezing risk.
 - Dust Sensor: Located behind the front filter. Expected normal range is 0-340 µg/m³. Dust > 340 µg/m³ indicates a dirty filter.
 - Power Monitor: Main input. Power > 1820W suggests an overworked compressor or capacitor failing. Power < 1700W (but > 0) suggests the fan is running but the compressor failed to start. Current > 8.2A suggests overloading; current < 7.6A suggests underload or failed start.
+- Refrigerant Leak Signature: Triggered when there is a combination of: Low Current (< 7.6A), Low Power (< 1700W), High Output Air Temp (> 25°C), and High Compressor Outlet Temp (> 70°C). Diagnosing a Refrigerant Leak maps to "Maintenance" (Need Maintenance) action.
 
 INSTRUCTIONS:
 Analyze the provided telemetry data. Provide a structured response detailing all current and potential future issues.

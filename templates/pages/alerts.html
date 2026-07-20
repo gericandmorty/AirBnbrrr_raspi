@@ -292,7 +292,7 @@
           return 'Need Cleaning';
       }
       if (iss.includes('leak') || iss.includes('refrigerant') || key.includes('temp2')) {
-          return 'Need Repair';
+          return 'Need Maintenance';
       }
       if (iss.includes('overheating') || iss.includes('discharge') || key.includes('temp1')) {
           return 'Need Maintenance';
@@ -300,10 +300,10 @@
       if (iss.includes('vibration') || key.includes('vibration')) {
           return 'Need Maintenance';
       }
-      if (severity === 'Critical' || severity === 'High') {
+      if (severity === 'Critical') {
           return 'Need Repair';
       }
-      if (severity === 'Medium') {
+      if (severity === 'High' || severity === 'Medium') {
           return 'Need Maintenance';
       }
       return 'Healthy';
@@ -364,10 +364,10 @@
       if (sum.includes('freezing') || sum.includes('filter') || sum.includes('clean')) {
         return 'Need Cleaning';
       }
-      if (sum.includes('leak') || sum.includes('refrigerant') || sum.includes('repair') || sum.includes('critical')) {
+      if (sum.includes('repair') || sum.includes('critical')) {
         return 'Need Repair';
       }
-      if (sum.includes('overheating') || sum.includes('vibration') || sum.includes('maintenance')) {
+      if (sum.includes('overheating') || sum.includes('vibration') || sum.includes('maintenance') || sum.includes('leak') || sum.includes('refrigerant')) {
         return 'Need Maintenance';
       }
       return 'Need Maintenance';
