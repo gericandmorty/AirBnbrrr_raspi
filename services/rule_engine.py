@@ -2,16 +2,17 @@
 Rule-Based Anomaly Detection Engine for AirBnBrrr
 ===================================================
 A hybrid deterministic safety check algorithm:
-1. Keeps the 4 Combined Alerts (Compressor Overheating, Vibration, Dust, Reduced Cooling)
-2. Implements detailed individual sensor checks for specific anomalies with descriptive status messages.
+1. Handles Sensor Offline/Disconnected states cleanly (checking for None/Null values).
+2. Performs combined rule checks (Compressor Overheating, Reduced Cooling).
+3. Performs individual sensor checks only if the sensor readings are non-null.
 """
 
 def is_overheating(tel):
     try:
         return (
-            float(tel.get("pzem_current", 0) or 0) >= 8.8 and 
-            float(tel.get("pzem_power", 0) or 0) >= 1860.0 and 
-            float(tel.get("vibration", 0) or 0) >= 90.0
+            tel.get("pzem_current") is not None and float(tel.get("pzem_current")) >= 8.8 and 
+            tel.get("pzem_power") is not None and float(tel.get("pzem_power")) >= 1860.0 and 
+            tel.get("vibration") is not None and float(tel.get("vibration")) >= 90.0
         )
     except Exception:
         return False
@@ -19,14 +20,95 @@ def is_overheating(tel):
 def is_reduced_cooling(tel):
     try:
         return (
-            float(tel.get("ds18b20_temp1", 0) or 0) >= 64.0 and
-            float(tel.get("dht_temp", 0) or 0) >= 21.0 and
-            float(tel.get("ds18b20_temp2", 0) or 0) >= 22.0
+            tel.get("ds18b20_temp1") is not None and float(tel.get("ds18b20_temp1")) >= 64.0 and
+            tel.get("dht_temp") is not None and float(tel.get("dht_temp")) >= 21.0 and
+            tel.get("ds18b20_temp2") is not None and float(tel.get("ds18b20_temp2")) >= 22.0
         )
     except Exception:
         return False
 
 RULES = [
+    # ── SENSOR OFFLINE ALERTS ──────────────────────────────────
+    {
+        "id": "dht_offline",
+        "label": "DHT Sensor Offline",
+        "description": "Checks if output air temperature or humidity is missing/null",
+        "check": lambda tel: tel.get("dht_temp") is None or tel.get("dht_humidity") is None,
+        "issue": "DHT Sensor Offline",
+        "severity": "High",
+        "root_cause": "The output air temperature or humidity reading is missing, indicating the DHT22 sensor is not communicating with the ESP32.",
+        "recommended_action": "Check physical wiring of the DHT22 sensor to GPIO Pin 18 and verify VCC/GND power.",
+        "normal_range": "Valid reading (non-null)",
+        "measured_val_func": lambda tel: f"Temp: {tel.get('dht_temp')}°C, Hum: {tel.get('dht_humidity')}%",
+        "unit": ""
+    },
+    {
+        "id": "pzem_offline",
+        "label": "Power Meter Offline",
+        "description": "Checks if PZEM power meter readings are missing/null",
+        "check": lambda tel: tel.get("pzem_voltage") is None or tel.get("pzem_current") is None,
+        "issue": "Power Meter Offline",
+        "severity": "High",
+        "root_cause": "PZEM-004T power meter readings are missing, indicating serial UART communication loss.",
+        "recommended_action": "Verify PZEM-004T serial UART connection and power supply.",
+        "normal_range": "Valid reading (non-null)",
+        "measured_val_func": lambda tel: f"Voltage: {tel.get('pzem_voltage')}V, Current: {tel.get('pzem_current')}A",
+        "unit": ""
+    },
+    {
+        "id": "temp1_offline",
+        "label": "Outlet Temp Probe Offline",
+        "description": "Checks if DS18B20 outlet temperature probe is missing/null",
+        "check": lambda tel: tel.get("ds18b20_temp1") is None,
+        "issue": "Outlet Temp Probe Offline",
+        "severity": "High",
+        "root_cause": "The DS18B20 outlet compressor temperature probe returned no data.",
+        "recommended_action": "Check DS18B20 outlet temperature probe wire connection to GPIO Pin 33.",
+        "normal_range": "Valid reading (non-null)",
+        "measured_val_func": lambda tel: f"Outlet: {tel.get('ds18b20_temp1')}°C",
+        "unit": ""
+    },
+    {
+        "id": "temp2_offline",
+        "label": "Inlet Temp Probe Offline",
+        "description": "Checks if DS18B20 inlet temperature probe is missing/null",
+        "check": lambda tel: tel.get("ds18b20_temp2") is None,
+        "issue": "Inlet Temp Probe Offline",
+        "severity": "High",
+        "root_cause": "The DS18B20 inlet compressor temperature probe returned no data.",
+        "recommended_action": "Check DS18B20 inlet temperature probe wire connection to GPIO Pin 25.",
+        "normal_range": "Valid reading (non-null)",
+        "measured_val_func": lambda tel: f"Inlet: {tel.get('ds18b20_temp2')}°C",
+        "unit": ""
+    },
+    {
+        "id": "dust_offline",
+        "label": "Dust Sensor Offline",
+        "description": "Checks if dust sensor reading is missing/null",
+        "check": lambda tel: tel.get("dust_sensor") is None,
+        "issue": "Dust Sensor Offline",
+        "severity": "Low",
+        "root_cause": "The GP2Y1010 dust sensor returned no reading.",
+        "recommended_action": "Verify dust sensor wiring connection.",
+        "normal_range": "Valid reading (non-null)",
+        "measured_val_func": lambda tel: f"Dust: {tel.get('dust_sensor')} µg/m³",
+        "unit": ""
+    },
+    {
+        "id": "vibration_offline",
+        "label": "Vibration Sensor Offline",
+        "description": "Checks if vibration sensor reading is missing/null",
+        "check": lambda tel: tel.get("vibration") is None,
+        "issue": "Vibration Sensor Offline",
+        "severity": "Medium",
+        "root_cause": "The ADXL345 vibration sensor I2C communication is offline.",
+        "recommended_action": "Check ADXL345 I2C connections (SDA/SCL) and verify pull-up resistors.",
+        "normal_range": "Valid reading (non-null)",
+        "measured_val_func": lambda tel: f"Vib: {tel.get('vibration')} Hz",
+        "unit": ""
+    },
+
+    # ── COMBINED ALERTS (1 to 4) ──────────────────────────────
     {
         "id": "compressor_overheating",
         "label": "Compressor Overheating",
@@ -53,11 +135,13 @@ RULES = [
         "measured_val_func": lambda tel: f"Outlet: {tel.get('ds18b20_temp1')}°C, Output: {tel.get('dht_temp')}°C, Inlet: {tel.get('ds18b20_temp2')}°C",
         "unit": "°C"
     },
+
+    # ── INDIVIDUAL ALERTS ─────────────────────────────────────
     {
         "id": "high_voltage",
         "label": "High Voltage Supply",
         "description": "Voltage supply check (> 241 V)",
-        "check": lambda tel: float(tel.get("pzem_voltage", 0) or 0) > 241.0,
+        "check": lambda tel: tel.get("pzem_voltage") is not None and float(tel.get("pzem_voltage")) > 241.0,
         "issue": "High Voltage - Overvoltage supply",
         "severity": "High",
         "root_cause": "Voltage supply exceeds the safe operating limit of 241 V.",
@@ -70,7 +154,7 @@ RULES = [
         "id": "low_voltage",
         "label": "Low Voltage Supply",
         "description": "Voltage supply check (< 225 V)",
-        "check": lambda tel: float(tel.get("pzem_voltage", 0) or 0) < 225.0,
+        "check": lambda tel: tel.get("pzem_voltage") is not None and float(tel.get("pzem_voltage")) < 225.0,
         "issue": "Low Voltage - Undervoltage supply",
         "severity": "High",
         "root_cause": "Voltage supply is below the safe operating limit of 225 V.",
@@ -83,7 +167,7 @@ RULES = [
         "id": "high_inlet_temp",
         "label": "High Inlet Temperature",
         "description": "Inlet compressor suction temp check (> 17 °C)",
-        "check": lambda tel: float(tel.get("ds18b20_temp2", 0) or 0) > 17.0 and not is_reduced_cooling(tel),
+        "check": lambda tel: tel.get("ds18b20_temp2") is not None and float(tel.get("ds18b20_temp2")) > 17.0 and not is_reduced_cooling(tel),
         "issue": "High Inlet Temperature (Suction) — Dirty evaporator coil",
         "severity": "High",
         "root_cause": "Inlet compressor suction line temperature is above the safe operating limit of 17 °C.",
@@ -96,7 +180,7 @@ RULES = [
         "id": "low_inlet_temp",
         "label": "Low Inlet Temperature",
         "description": "Inlet compressor suction temp check (< 8 °C)",
-        "check": lambda tel: float(tel.get("ds18b20_temp2", 0) or 0) < 8.0 and not is_reduced_cooling(tel),
+        "check": lambda tel: tel.get("ds18b20_temp2") is not None and float(tel.get("ds18b20_temp2")) < 8.0 and not is_reduced_cooling(tel),
         "issue": "Low Inlet Temperature (Suction) — faulty thermostat",
         "severity": "High",
         "root_cause": "Inlet compressor suction line temperature is below the safe operating limit of 8 °C.",
@@ -109,7 +193,7 @@ RULES = [
         "id": "high_outlet_temp",
         "label": "High Outlet Compressor Temp",
         "description": "Outlet compressor discharge temp check (> 70 °C)",
-        "check": lambda tel: float(tel.get("ds18b20_temp1", 0) or 0) > 70.0 and not is_reduced_cooling(tel),
+        "check": lambda tel: tel.get("ds18b20_temp1") is not None and float(tel.get("ds18b20_temp1")) > 70.0 and not is_reduced_cooling(tel),
         "issue": "High Outlet Temperature (Discharge) — Dirty condenser coil",
         "severity": "High",
         "root_cause": "Outlet compressor discharge line temperature is above the safe operating limit of 70 °C.",
@@ -122,7 +206,7 @@ RULES = [
         "id": "low_outlet_temp",
         "label": "Low Outlet Compressor Temp",
         "description": "Outlet compressor discharge temp check (< 50 °C)",
-        "check": lambda tel: float(tel.get("ds18b20_temp1", 0) or 0) < 50.0 and not is_reduced_cooling(tel),
+        "check": lambda tel: tel.get("ds18b20_temp1") is not None and float(tel.get("ds18b20_temp1")) < 50.0 and not is_reduced_cooling(tel),
         "issue": "Low Outlet Temperature (Discharge) — Low refrigerant charge",
         "severity": "High",
         "root_cause": "Outlet compressor discharge line temperature is below the safe operating limit of 50 °C.",
@@ -135,7 +219,7 @@ RULES = [
         "id": "low_vibration",
         "label": "Low Vibration",
         "description": "Compressor low vibration check (< 10 Hz)",
-        "check": lambda tel: float(tel.get("vibration", 0) or 0) < 10.0,
+        "check": lambda tel: tel.get("vibration") is not None and float(tel.get("vibration")) < 10.0,
         "issue": "Low Vibration — Compressor not operating, fan not running or off",
         "severity": "High",
         "root_cause": "Vibration frequency is abnormally low, suggesting the unit is not running or operating.",
@@ -148,7 +232,7 @@ RULES = [
         "id": "excessive_vibration",
         "label": "Excessive Vibration",
         "description": "Compressor excessive vibration check (>= 90 Hz)",
-        "check": lambda tel: float(tel.get("vibration", 0) or 0) >= 90.0 and not is_overheating(tel),
+        "check": lambda tel: tel.get("vibration") is not None and float(tel.get("vibration")) >= 90.0 and not is_overheating(tel),
         "issue": "Excessive Vibration — Loose compressor mounting, worn bearings, condenser fan imbalance",
         "severity": "Medium",
         "root_cause": "Vibration frequency exceeds the safety threshold of 90 Hz.",
@@ -161,7 +245,7 @@ RULES = [
         "id": "low_dust",
         "label": "Low Dust Concentration",
         "description": "Dust sensor consistently zero check (== 0 µg/m³)",
-        "check": lambda tel: float(tel.get("dust_sensor", 0) or 0) <= 0.001,
+        "check": lambda tel: tel.get("dust_sensor") is not None and float(tel.get("dust_sensor")) <= 0.001,
         "issue": "Low Dust Sensor — Clean air path, recently cleaned filter, or possible dust sensor malfunction if consistently zero",
         "severity": "Low",
         "root_cause": "Dust concentration reading is exactly zero, which may indicate a recently cleaned filter or a sensor malfunction.",
@@ -174,7 +258,7 @@ RULES = [
         "id": "excessive_dust",
         "label": "Excessive Dust Sensor",
         "description": "Dust sensor threshold check (>= 340 µg/m³)",
-        "check": lambda tel: float(tel.get("dust_sensor", 0) or 0) >= 340.0,
+        "check": lambda tel: tel.get("dust_sensor") is not None and float(tel.get("dust_sensor")) >= 340.0,
         "issue": "Excessive Dust Sensor — Dirty air filter",
         "severity": "Low",
         "root_cause": "Dust concentration exceeds the safe threshold of 340 µg/m³.",
@@ -187,7 +271,7 @@ RULES = [
         "id": "individual_current_low",
         "label": "Low Current Draw",
         "description": "Current draw check (< 7.6 A)",
-        "check": lambda tel: float(tel.get("pzem_current", 0) or 0) < 7.6,
+        "check": lambda tel: tel.get("pzem_current") is not None and float(tel.get("pzem_current")) < 7.6,
         "issue": "Low Current Anomaly",
         "severity": "High",
         "root_cause": "Current draw is below the normal operating limit of 7.6 A.",
@@ -200,7 +284,7 @@ RULES = [
         "id": "individual_current_high",
         "label": "High Current Draw",
         "description": "Current draw check (> 8.8 A)",
-        "check": lambda tel: float(tel.get("pzem_current", 0) or 0) > 8.8 and not is_overheating(tel),
+        "check": lambda tel: tel.get("pzem_current") is not None and float(tel.get("pzem_current")) > 8.8 and not is_overheating(tel),
         "issue": "High Current Anomaly",
         "severity": "High",
         "root_cause": "Current draw is above the normal operating limit of 8.8 A.",
@@ -213,7 +297,7 @@ RULES = [
         "id": "individual_power_low",
         "label": "Low Power Consumption",
         "description": "Power draw check (< 1650 W)",
-        "check": lambda tel: float(tel.get("pzem_power", 0) or 0) < 1650.0,
+        "check": lambda tel: tel.get("pzem_power") is not None and float(tel.get("pzem_power")) < 1650.0,
         "issue": "Low Power Anomaly",
         "severity": "High",
         "root_cause": "Power draw is below the normal operating limit of 1650 W.",
@@ -226,7 +310,7 @@ RULES = [
         "id": "individual_power_high",
         "label": "High Power Consumption",
         "description": "Power draw check (> 1860 W)",
-        "check": lambda tel: float(tel.get("pzem_power", 0) or 0) > 1860.0 and not is_overheating(tel),
+        "check": lambda tel: tel.get("pzem_power") is not None and float(tel.get("pzem_power")) > 1860.0 and not is_overheating(tel),
         "issue": "High Power Anomaly",
         "severity": "High",
         "root_cause": "Power draw is above the normal operating limit of 1860 W.",
@@ -239,7 +323,7 @@ RULES = [
         "id": "individual_output_temp_low",
         "label": "Low Output Temp",
         "description": "Supply air output temp check (< 7 °C)",
-        "check": lambda tel: float(tel.get("dht_temp", 0) or 0) < 7.0 and not is_reduced_cooling(tel),
+        "check": lambda tel: tel.get("dht_temp") is not None and float(tel.get("dht_temp")) < 7.0 and not is_reduced_cooling(tel),
         "issue": "Low Output Temp Anomaly",
         "severity": "High",
         "root_cause": "Supply air output temperature is below the safe limit of 7 °C.",
@@ -252,7 +336,7 @@ RULES = [
         "id": "individual_output_temp_high",
         "label": "High Output Temp",
         "description": "Supply air output temp check (> 25 °C)",
-        "check": lambda tel: float(tel.get("dht_temp", 0) or 0) > 25.0 and not is_reduced_cooling(tel),
+        "check": lambda tel: tel.get("dht_temp") is not None and float(tel.get("dht_temp")) > 25.0 and not is_reduced_cooling(tel),
         "issue": "High Output Temp Anomaly",
         "severity": "High",
         "root_cause": "Supply air output temperature is above the safe limit of 25 °C.",
@@ -265,7 +349,7 @@ RULES = [
         "id": "dht_humidity",
         "label": "Humidity",
         "description": "Relative humidity check (<= 80%)",
-        "check": lambda tel: float(tel.get("dht_humidity", 0) or 0) > 80.0,
+        "check": lambda tel: tel.get("dht_humidity") is not None and float(tel.get("dht_humidity")) > 80.0,
         "issue": "Humidity Anomaly",
         "severity": "Low",
         "root_cause": "Relative humidity exceeds the normal operating limit of 80%.",
