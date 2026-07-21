@@ -20,6 +20,7 @@ ANOMALOUS_AC_TEMPLATES = [
     {
         "fault": "Compressor Overheating",
         "ac_unit": "AC3",
+        "day": 14,
         "base_telemetry": {
             "dust_sensor": 0.0,
             "dht_temp": 24.5,
@@ -49,6 +50,7 @@ ANOMALOUS_AC_TEMPLATES = [
     {
         "fault": "Abnormal Compressor Vibration",
         "ac_unit": "AC4",
+        "day": 9,
         "base_telemetry": {
             "dust_sensor": 0.0,
             "dht_temp": 23.5,
@@ -78,6 +80,7 @@ ANOMALOUS_AC_TEMPLATES = [
     {
         "fault": "High Dust Concentration",
         "ac_unit": "AC4",
+        "day": 9,
         "base_telemetry": {
             "dust_sensor": 436.0,      # Triggers dust >= 340
             "dht_temp": 23.5,
@@ -107,6 +110,7 @@ ANOMALOUS_AC_TEMPLATES = [
     {
         "fault": "Reduced Cooling Performance",
         "ac_unit": "AC5",
+        "day": 13,
         "base_telemetry": {
             "dust_sensor": 95.0,
             "dht_temp": 22.0,           # Output air temp >= 21°C (triggers rule)
@@ -132,6 +136,216 @@ ANOMALOUS_AC_TEMPLATES = [
                 }
             ]
         }
+    },
+    {
+        "fault": "Voltage Anomaly",
+        "ac_unit": "AC1",
+        "day": 6,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 234.0,     # Triggers voltage outside 225-231
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Voltage Anomaly",
+                    "status": "Current",
+                    "confidence_score": 94,
+                    "root_cause": "Voltage supply (234.0 V) is outside the safe operating range of 225–231 V.",
+                    "severity": "High",
+                    "recommended_action": "Verify input voltage stability and check voltage regulator status."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "Current Anomaly",
+        "ac_unit": "AC2",
+        "day": 7,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 9.2,       # Triggers current outside 7.6-8.8
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Current Anomaly",
+                    "status": "Current",
+                    "confidence_score": 93,
+                    "root_cause": "Current draw (9.2 A) is outside the safe operating range of 7.6–8.8 A.",
+                    "severity": "High",
+                    "recommended_action": "Inspect electrical wiring, connections, and check compressor motor draws."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "Power Consumption Anomaly",
+        "ac_unit": "AC2",
+        "day": 7,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1890.0,      # Triggers power outside 1650-1860
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Power Consumption Anomaly",
+                    "status": "Current",
+                    "confidence_score": 93,
+                    "root_cause": "Power draw (1890.0 W) is outside the safe operating range of 1650–1860 W.",
+                    "severity": "High",
+                    "recommended_action": "Check compressor electrical loading and verify line stability."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "Output Temp Anomaly",
+        "ac_unit": "AC1",
+        "day": 6,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 27.5,          # Triggers dht_temp outside 7-25
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Output Temp Anomaly",
+                    "status": "Current",
+                    "confidence_score": 92,
+                    "root_cause": "Supply air output temperature (27.5 °C) is outside the safe operating range of 7–25 °C.",
+                    "severity": "High",
+                    "recommended_action": "Inspect evaporator fan, clean filter, and check for correct air discharge."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "Humidity Anomaly",
+        "ac_unit": "AC2",
+        "day": 7,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 85.0,      # Triggers humidity > 80%
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Humidity Anomaly",
+                    "status": "Current",
+                    "confidence_score": 91,
+                    "root_cause": "Relative humidity (85.0%) exceeds the normal operating limit of 80%.",
+                    "severity": "Low",
+                    "recommended_action": "Verify indoor fan speeds, check return air humidity, and confirm condensate drainage."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "Outlet Compressor Temp Anomaly",
+        "ac_unit": "AC3",
+        "day": 14,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 74.5,     # Triggers ds18b20_temp1 outside 50-70
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Outlet Compressor Temp Anomaly",
+                    "status": "Current",
+                    "confidence_score": 93,
+                    "root_cause": "Outlet compressor discharge line temperature (74.5 °C) is outside the safe operating range of 50–70 °C.",
+                    "severity": "High",
+                    "recommended_action": "Check whether the condenser fan is operating properly. Stop operating the air conditioner if the current continues to increase to prevent compressor damage and protect the electrical wiring and circuit breaker."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "Inlet Compressor Temp Anomaly",
+        "ac_unit": "AC3",
+        "day": 14,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 19.5,     # Triggers ds18b20_temp2 outside 8-17
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Inlet Compressor Temp Anomaly",
+                    "status": "Current",
+                    "confidence_score": 93,
+                    "root_cause": "Inlet compressor suction line temperature (19.5 °C) is outside the safe operating range of 8–17 °C.",
+                    "severity": "High",
+                    "recommended_action": "Inspect suction line insulation, check expansion valve operation, and verify refrigerant charge."
+                }
+            ]
+        }
     }
 ]
 
@@ -151,47 +365,78 @@ def seed_alerts():
         print("Generating 35 alerts based on data_gathered errors...")
         
         for i in range(35):
-            # Select target day by cycling through the weekdays
-            day = WEEKDAYS[i % len(WEEKDAYS)]
-            
-            # Select anomalous template cycling through the 5 AC units
+            # Select anomalous template cycling through the templates
             tmpl = ANOMALOUS_AC_TEMPLATES[i % len(ANOMALOUS_AC_TEMPLATES)]
+            day = tmpl["day"]
             
-            # Copy telemetry and apply small random variations to make data authentic
+            # Copy telemetry and apply safe variations to make data authentic without clearing anomalies
             tel = dict(tmpl["base_telemetry"])
-            tel["pzem_voltage"] = round(tel["pzem_voltage"] + random.uniform(-1.0, 1.0), 1)
             
-            # Apply power jitter but clamp above threshold if base is already at/above 1860
-            raw_power = tel["pzem_power"] + random.uniform(-10.0, 10.0)
-            if tmpl["base_telemetry"]["pzem_power"] >= 1860.0:
-                raw_power = max(raw_power, 1861.0)
-            tel["pzem_power"] = round(raw_power, 1)
+            # Voltage
+            tel["pzem_voltage"] = tel["pzem_voltage"] + random.uniform(-1.0, 1.0)
+            if tmpl["base_telemetry"]["pzem_voltage"] > 231.0:
+                tel["pzem_voltage"] = max(tel["pzem_voltage"], 231.1)
+            elif tmpl["base_telemetry"]["pzem_voltage"] < 225.0:
+                tel["pzem_voltage"] = min(tel["pzem_voltage"], 224.9)
+            tel["pzem_voltage"] = round(tel["pzem_voltage"], 1)
             
-            # Re-derive current from power/voltage
-            tel["pzem_current"] = round(tel["pzem_power"] / tel["pzem_voltage"], 2)
-            # Clamp current above threshold if base already at/above 8.8
-            if tmpl["base_telemetry"].get("pzem_current", 0) >= 8.8:
+            # Current
+            tel["pzem_current"] = tel["pzem_current"] + random.uniform(-0.1, 0.1)
+            if tmpl["base_telemetry"]["pzem_current"] > 8.8:
                 tel["pzem_current"] = max(tel["pzem_current"], 8.81)
+            elif tmpl["base_telemetry"]["pzem_current"] < 7.6:
+                tel["pzem_current"] = min(tel["pzem_current"], 7.59)
+            tel["pzem_current"] = round(tel["pzem_current"], 2)
             
-            tel["dht_temp"] = round(tel["dht_temp"] + random.uniform(-0.4, 0.4), 1)
+            # Power
+            tel["pzem_power"] = tel["pzem_power"] + random.uniform(-10.0, 10.0)
+            if tmpl["base_telemetry"]["pzem_power"] > 1860.0:
+                tel["pzem_power"] = max(tel["pzem_power"], 1861.0)
+            elif tmpl["base_telemetry"]["pzem_power"] < 1650.0:
+                tel["pzem_power"] = min(tel["pzem_power"], 1649.0)
+            tel["pzem_power"] = round(tel["pzem_power"], 1)
             
-            # Apply vibration jitter, clamping above 90 if template triggers vibration
-            raw_vib = tel["vibration"] + random.uniform(-3.0, 3.0)
+            # Output Temp (dht_temp)
+            tel["dht_temp"] = tel["dht_temp"] + random.uniform(-0.4, 0.4)
+            if tmpl["base_telemetry"]["dht_temp"] > 25.0:
+                tel["dht_temp"] = max(tel["dht_temp"], 25.1)
+            elif tmpl["base_telemetry"]["dht_temp"] < 7.0:
+                tel["dht_temp"] = min(tel["dht_temp"], 6.9)
+            tel["dht_temp"] = round(tel["dht_temp"], 1)
+            
+            # Humidity (dht_humidity)
+            tel["dht_humidity"] = tel["dht_humidity"] + random.uniform(-2.0, 2.0)
+            if tmpl["base_telemetry"]["dht_humidity"] > 80.0:
+                tel["dht_humidity"] = max(tel["dht_humidity"], 80.1)
+            tel["dht_humidity"] = round(tel["dht_humidity"], 1)
+            
+            # Vibration
+            tel["vibration"] = tel["vibration"] + random.uniform(-3.0, 3.0)
             if tmpl["base_telemetry"]["vibration"] >= 90.0:
-                raw_vib = max(raw_vib, 90.1)
-            tel["vibration"] = round(raw_vib, 1)
+                tel["vibration"] = max(tel["vibration"], 90.1)
+            tel["vibration"] = round(tel["vibration"], 1)
             
-            # Humidity jitter – clamp below 80 if template triggers low humidity
-            raw_hum = tel["dht_humidity"] + random.uniform(-2.0, 2.0)
-            if tmpl["base_telemetry"]["dht_humidity"] <= 80.0:
-                raw_hum = min(raw_hum, 79.9)
-            tel["dht_humidity"] = round(raw_hum, 1)
+            # Dust
+            tel["dust_sensor"] = tel["dust_sensor"] + random.uniform(-5.0, 5.0)
+            if tmpl["base_telemetry"]["dust_sensor"] > 340.0:
+                tel["dust_sensor"] = max(tel["dust_sensor"], 340.1)
+            tel["dust_sensor"] = round(max(tel["dust_sensor"], 0.0), 1)
 
-            # Dust jitter – clamp above 340 if template triggers dust
-            if tmpl["base_telemetry"].get("dust_sensor", 0) >= 340.0:
-                tel["dust_sensor"] = round(max(tel["dust_sensor"] + random.uniform(-5.0, 5.0), 340.1), 1)
-            else:
-                tel["dust_sensor"] = round(max(tel["dust_sensor"] + random.uniform(-2.0, 2.0), 0.0), 1)
+            # Outlet Compressor Temp (ds18b20_temp1)
+            tel["ds18b20_temp1"] = tel["ds18b20_temp1"] + random.uniform(-1.0, 1.0)
+            if tmpl["base_telemetry"]["ds18b20_temp1"] > 70.0:
+                tel["ds18b20_temp1"] = max(tel["ds18b20_temp1"], 70.1)
+            elif tmpl["base_telemetry"]["ds18b20_temp1"] < 50.0:
+                tel["ds18b20_temp1"] = min(tel["ds18b20_temp1"], 49.9)
+            tel["ds18b20_temp1"] = round(tel["ds18b20_temp1"], 1)
+
+            # Inlet Compressor Temp (ds18b20_temp2)
+            tel["ds18b20_temp2"] = tel["ds18b20_temp2"] + random.uniform(-1.0, 1.0)
+            if tmpl["base_telemetry"]["ds18b20_temp2"] > 17.0:
+                tel["ds18b20_temp2"] = max(tel["ds18b20_temp2"], 17.1)
+            elif tmpl["base_telemetry"]["ds18b20_temp2"] < 8.0:
+                tel["ds18b20_temp2"] = min(tel["ds18b20_temp2"], 7.9)
+            tel["ds18b20_temp2"] = round(tel["ds18b20_temp2"], 1)
                 
             # Add ac_unit label to the context
             tel["ac_unit"] = tmpl["ac_unit"]

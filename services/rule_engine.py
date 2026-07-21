@@ -1,18 +1,16 @@
 """
 Rule-Based Anomaly Detection Engine for AirBnBrrr
 ===================================================
-A deterministic safety check algorithm based on specifications:
-1. Compressor Overheating (Current >= 8.8 A AND Power >= 1860 W AND Vibration >= 90 Hz)
-2. Abnormal Compressor Vibration (Vibration >= 90 Hz)
-3. High Dust Concentration (Dust >= 340 µg/m³)
-4. Low Humidity (Humidity <= 80%)
+A hybrid deterministic safety check algorithm evaluating:
+1. Combined rules (Compressor Overheating, Abnormal Vibration, High Dust, Reduced Cooling)
+2. Individual sensors against normal boundaries (Power, Voltage, Current, Output Air, Humidity, Outlet Compressor, Inlet Compressor)
 """
 
 RULES = [
     {
         "id": "compressor_overheating",
         "label": "Compressor Overheating",
-        "description": "Deterministic safety check for compressor thermal and load strain",
+        "description": "Deterministic safety check: Current >= 8.8 A AND Power >= 1860 W AND Vibration >= 90 Hz",
         "check": lambda tel: (
             float(tel.get("pzem_current", 0) or 0) >= 8.8 and 
             float(tel.get("pzem_power", 0) or 0) >= 1860.0 and 
@@ -29,7 +27,7 @@ RULES = [
     {
         "id": "vibration",
         "label": "Abnormal Compressor Vibration",
-        "description": "Deterministic safety check for mechanical looseness or wear",
+        "description": "Deterministic safety check: Vibration >= 90 Hz",
         "check": lambda tel: (
             float(tel.get("vibration", 0) or 0) >= 90.0 and not (
                 float(tel.get("pzem_current", 0) or 0) >= 8.8 and 
@@ -48,7 +46,7 @@ RULES = [
     {
         "id": "dust_sensor",
         "label": "High Dust Concentration",
-        "description": "Deterministic safety check for clogged filter",
+        "description": "Deterministic safety check: Dust >= 340 µg/m³",
         "check": lambda tel: float(tel.get("dust_sensor", 0) or 0) >= 340.0,
         "issue": "High Dust Concentration",
         "severity": "Low",
@@ -59,22 +57,9 @@ RULES = [
         "unit": "µg/m³"
     },
     {
-        "id": "dht_humidity",
-        "label": "Low Humidity",
-        "description": "Deterministic safety check for indoor coil cooling performance",
-        "check": lambda tel: float(tel.get("dht_humidity", 100) or 100) <= 80.0,
-        "issue": "Low Humidity",
-        "severity": "Low",
-        "root_cause": "Indicates reduced cooling performance or weak airflow from the indoor unit. Inspect the evaporator fan and verify that cold air is being discharged properly.",
-        "recommended_action": "Check whether cold air is being discharged properly and inspect the evaporator fan for reduced airflow or malfunction.",
-        "normal_range": "> 80 %",
-        "measured_val_func": lambda tel: f"{tel.get('dht_humidity')} %",
-        "unit": "%"
-    },
-    {
         "id": "reduced_cooling",
         "label": "Reduced Cooling Performance",
-        "description": "Deterministic check: Outlet Compressor ≥ 64°C AND Output Air ≥ 21°C AND Inlet ≥ 22°C",
+        "description": "Deterministic check: Outlet Compressor >= 64°C AND Output Air >= 21°C AND Inlet >= 22°C",
         "check": lambda tel: (
             float(tel.get("ds18b20_temp1", 0) or 0) >= 64.0 and
             float(tel.get("dht_temp", 0) or 0) >= 21.0 and
@@ -86,6 +71,127 @@ RULES = [
         "recommended_action": "The monitored temperatures indicate a reduction in cooling performance. Inspect the refrigerant system for possible refrigerant leakage or insufficient refrigerant charge. Verify the condition using appropriate refrigeration service equipment and perform corrective maintenance if necessary.",
         "normal_range": "Outlet < 64°C OR Output < 21°C OR Inlet < 22°C",
         "measured_val_func": lambda tel: f"Outlet: {tel.get('ds18b20_temp1')}°C, Output: {tel.get('dht_temp')}°C, Inlet: {tel.get('ds18b20_temp2')}°C",
+        "unit": "°C"
+    },
+    {
+        "id": "pzem_voltage",
+        "label": "Voltage Supply",
+        "description": "Voltage supply check (225–231 V)",
+        "check": lambda tel: float(tel.get("pzem_voltage", 0) or 0) < 225.0 or float(tel.get("pzem_voltage", 0) or 0) > 231.0,
+        "issue": "Voltage Anomaly",
+        "severity": "High",
+        "root_cause": "Voltage supply is outside the safe operating range of 225–231 V.",
+        "recommended_action": "Verify input voltage stability and check voltage regulator status.",
+        "normal_range": "225 – 231 V",
+        "measured_val_func": lambda tel: f"{tel.get('pzem_voltage')} V",
+        "unit": "V"
+    },
+    {
+        "id": "individual_current",
+        "label": "Current Draw",
+        "description": "Current draw check (7.6–8.8 A)",
+        "check": lambda tel: (
+            (float(tel.get("pzem_current", 0) or 0) < 7.6 or float(tel.get("pzem_current", 0) or 0) > 8.8) and not (
+                float(tel.get("pzem_current", 0) or 0) >= 8.8 and 
+                float(tel.get("pzem_power", 0) or 0) >= 1860.0 and 
+                float(tel.get("vibration", 0) or 0) >= 90.0
+            )
+        ),
+        "issue": "Current Anomaly",
+        "severity": "High",
+        "root_cause": "Current draw is outside the safe operating range of 7.6–8.8 A.",
+        "recommended_action": "Inspect electrical wiring, connections, and check compressor motor draws.",
+        "normal_range": "7.6 – 8.8 A",
+        "measured_val_func": lambda tel: f"{tel.get('pzem_current')} A",
+        "unit": "A"
+    },
+    {
+        "id": "individual_power",
+        "label": "Power Consumption",
+        "description": "Power draw check (1650–1860 W)",
+        "check": lambda tel: (
+            (float(tel.get("pzem_power", 0) or 0) < 1650.0 or float(tel.get("pzem_power", 0) or 0) > 1860.0) and not (
+                float(tel.get("pzem_current", 0) or 0) >= 8.8 and 
+                float(tel.get("pzem_power", 0) or 0) >= 1860.0 and 
+                float(tel.get("vibration", 0) or 0) >= 90.0
+            )
+        ),
+        "issue": "Power Consumption Anomaly",
+        "severity": "High",
+        "root_cause": "Power draw is outside the safe operating range of 1650–1860 W.",
+        "recommended_action": "Check compressor electrical loading and verify line stability.",
+        "normal_range": "1650 – 1860 W",
+        "measured_val_func": lambda tel: f"{tel.get('pzem_power')} W",
+        "unit": "W"
+    },
+    {
+        "id": "individual_output_temp",
+        "label": "Output Temp",
+        "description": "Supply air output temp check (7–25 °C)",
+        "check": lambda tel: (
+            (float(tel.get("dht_temp", 0) or 0) < 7.0 or float(tel.get("dht_temp", 0) or 0) > 25.0) and not (
+                float(tel.get("ds18b20_temp1", 0) or 0) >= 64.0 and
+                float(tel.get("dht_temp", 0) or 0) >= 21.0 and
+                float(tel.get("ds18b20_temp2", 0) or 0) >= 22.0
+            )
+        ),
+        "issue": "Output Temp Anomaly",
+        "severity": "High",
+        "root_cause": "Supply air output temperature is outside the safe operating range of 7–25 °C.",
+        "recommended_action": "Inspect evaporator fan, clean filter, and check for correct air discharge.",
+        "normal_range": "7.0 – 25.0 °C",
+        "measured_val_func": lambda tel: f"{tel.get('dht_temp')} °C",
+        "unit": "°C"
+    },
+    {
+        "id": "dht_humidity",
+        "label": "Humidity",
+        "description": "Relative humidity check (<= 80%)",
+        "check": lambda tel: float(tel.get("dht_humidity", 0) or 0) > 80.0,
+        "issue": "Humidity Anomaly",
+        "severity": "Low",
+        "root_cause": "Relative humidity exceeds the normal operating limit of 80%.",
+        "recommended_action": "Verify indoor fan speeds, check return air humidity, and confirm condensate drainage.",
+        "normal_range": "≤ 80 %",
+        "measured_val_func": lambda tel: f"{tel.get('dht_humidity')} %",
+        "unit": "%"
+    },
+    {
+        "id": "individual_outlet_comp",
+        "label": "Outlet Compressor Temp",
+        "description": "Outlet compressor discharge temp check (50–70 °C)",
+        "check": lambda tel: (
+            (float(tel.get("ds18b20_temp1", 0) or 0) < 50.0 or float(tel.get("ds18b20_temp1", 0) or 0) > 70.0) and not (
+                float(tel.get("ds18b20_temp1", 0) or 0) >= 64.0 and
+                float(tel.get("dht_temp", 0) or 0) >= 21.0 and
+                float(tel.get("ds18b20_temp2", 0) or 0) >= 22.0
+            )
+        ),
+        "issue": "Outlet Compressor Temp Anomaly",
+        "severity": "High",
+        "root_cause": "Outlet compressor discharge line temperature is outside the safe operating range of 50–70 °C.",
+        "recommended_action": "Check whether the condenser fan is operating properly. Stop operating the air conditioner if the current continues to increase to prevent compressor damage and protect the electrical wiring and circuit breaker.",
+        "normal_range": "50.0 – 70.0 °C",
+        "measured_val_func": lambda tel: f"{tel.get('ds18b20_temp1')} °C",
+        "unit": "°C"
+    },
+    {
+        "id": "individual_inlet_comp",
+        "label": "Inlet Compressor Temp",
+        "description": "Inlet compressor suction temp check (8–17 °C)",
+        "check": lambda tel: (
+            (float(tel.get("ds18b20_temp2", 0) or 0) < 8.0 or float(tel.get("ds18b20_temp2", 0) or 0) > 17.0) and not (
+                float(tel.get("ds18b20_temp1", 0) or 0) >= 64.0 and
+                float(tel.get("dht_temp", 0) or 0) >= 21.0 and
+                float(tel.get("ds18b20_temp2", 0) or 0) >= 22.0
+            )
+        ),
+        "issue": "Inlet Compressor Temp Anomaly",
+        "severity": "High",
+        "root_cause": "Inlet compressor suction line temperature is outside the safe operating range of 8–17 °C.",
+        "recommended_action": "Inspect suction line insulation, check expansion valve operation, and verify refrigerant charge.",
+        "normal_range": "8.0 – 17.0 °C",
+        "measured_val_func": lambda tel: f"{tel.get('ds18b20_temp2')} °C",
         "unit": "°C"
     }
 ]
