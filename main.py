@@ -256,13 +256,18 @@ def process_telemetry_background(payload_dict: dict):
 			print(f"\n[ERROR] process_anomaly failed for dust: {e}\n", flush=True)
 		return
 
-	# Perform anomaly detection on a copy of the telemetry payload
+	# Copy payload for ML model detection
 	model_data = dict(payload_dict)
 	model_data.pop("ac_status", None)
 	model_data.pop("ac_thermostat", None)
 
+	# Perform deterministic rule checks first
+	from services.rule_engine import analyze_with_rules
+	rule_result = analyze_with_rules(payload_dict)
+	has_rule_violation = len(rule_result["findings"]) > 0
+
 	try:
-		is_anom = service.is_anomaly(model_data)
+		is_anom = has_rule_violation or service.is_anomaly(model_data)
 		if is_anom:
 			payload_dict["ac_status"] = ac_status
 			payload_dict["ac_thermostat"] = ac_thermostat
