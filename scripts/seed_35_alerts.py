@@ -138,7 +138,7 @@ ANOMALOUS_AC_TEMPLATES = [
         }
     },
     {
-        "fault": "Voltage Anomaly",
+        "fault": "High Voltage",
         "ac_unit": "AC1",
         "day": 6,
         "base_telemetry": {
@@ -148,7 +148,7 @@ ANOMALOUS_AC_TEMPLATES = [
             "vibration": 45.0,
             "ds18b20_temp1": 55.0,
             "ds18b20_temp2": 12.0,
-            "pzem_voltage": 234.0,     # Triggers voltage outside 225-231
+            "pzem_voltage": 244.0,     # Triggers voltage > 241
             "pzem_current": 8.0,
             "pzem_power": 1750.0,
             "pzem_frequency": 60.0,
@@ -157,10 +157,10 @@ ANOMALOUS_AC_TEMPLATES = [
         "ai_diagnoses": {
             "diagnoses": [
                 {
-                    "issue": "Voltage Anomaly",
+                    "issue": "High Voltage - Overvoltage supply",
                     "status": "Current",
                     "confidence_score": 94,
-                    "root_cause": "Voltage supply (234.0 V) is outside the safe operating range of 225–231 V.",
+                    "root_cause": "Voltage supply (244.0 V) is outside the safe operating range of 225–241 V.",
                     "severity": "High",
                     "recommended_action": "Verify input voltage stability and check voltage regulator status."
                 }
@@ -168,7 +168,37 @@ ANOMALOUS_AC_TEMPLATES = [
         }
     },
     {
-        "fault": "Current Anomaly",
+        "fault": "Low Voltage",
+        "ac_unit": "AC1",
+        "day": 6,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 222.0,     # Triggers voltage < 225
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Low Voltage - Undervoltage supply",
+                    "status": "Current",
+                    "confidence_score": 94,
+                    "root_cause": "Voltage supply (222.0 V) is outside the safe operating range of 225–241 V.",
+                    "severity": "High",
+                    "recommended_action": "Verify input voltage stability and check voltage regulator status."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "High Current Anomaly",
         "ac_unit": "AC2",
         "day": 7,
         "base_telemetry": {
@@ -187,7 +217,7 @@ ANOMALOUS_AC_TEMPLATES = [
         "ai_diagnoses": {
             "diagnoses": [
                 {
-                    "issue": "Current Anomaly",
+                    "issue": "High Current Anomaly",
                     "status": "Current",
                     "confidence_score": 93,
                     "root_cause": "Current draw (9.2 A) is outside the safe operating range of 7.6–8.8 A.",
@@ -198,7 +228,37 @@ ANOMALOUS_AC_TEMPLATES = [
         }
     },
     {
-        "fault": "Power Consumption Anomaly",
+        "fault": "Low Current Anomaly",
+        "ac_unit": "AC2",
+        "day": 7,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 7.2,       # Triggers current outside 7.6-8.8
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Low Current Anomaly",
+                    "status": "Current",
+                    "confidence_score": 93,
+                    "root_cause": "Current draw (7.2 A) is outside the safe operating range of 7.6–8.8 A.",
+                    "severity": "High",
+                    "recommended_action": "Inspect electrical wiring and check compressor loading."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "High Power Anomaly",
         "ac_unit": "AC2",
         "day": 7,
         "base_telemetry": {
@@ -217,7 +277,7 @@ ANOMALOUS_AC_TEMPLATES = [
         "ai_diagnoses": {
             "diagnoses": [
                 {
-                    "issue": "Power Consumption Anomaly",
+                    "issue": "High Power Anomaly",
                     "status": "Current",
                     "confidence_score": 93,
                     "root_cause": "Power draw (1890.0 W) is outside the safe operating range of 1650–1860 W.",
@@ -228,7 +288,37 @@ ANOMALOUS_AC_TEMPLATES = [
         }
     },
     {
-        "fault": "Output Temp Anomaly",
+        "fault": "Low Power Anomaly",
+        "ac_unit": "AC2",
+        "day": 7,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1620.0,      # Triggers power outside 1650-1860
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Low Power Anomaly",
+                    "status": "Current",
+                    "confidence_score": 93,
+                    "root_cause": "Power draw (1620.0 W) is outside the safe operating range of 1650–1860 W.",
+                    "severity": "High",
+                    "recommended_action": "Check line voltage stability and compressor capacitors."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "High Output Temp Anomaly",
         "ac_unit": "AC1",
         "day": 6,
         "base_telemetry": {
@@ -247,12 +337,42 @@ ANOMALOUS_AC_TEMPLATES = [
         "ai_diagnoses": {
             "diagnoses": [
                 {
-                    "issue": "Output Temp Anomaly",
+                    "issue": "High Output Temp Anomaly",
                     "status": "Current",
                     "confidence_score": 92,
                     "root_cause": "Supply air output temperature (27.5 °C) is outside the safe operating range of 7–25 °C.",
                     "severity": "High",
                     "recommended_action": "Inspect evaporator fan, clean filter, and check for correct air discharge."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "Low Output Temp Anomaly",
+        "ac_unit": "AC1",
+        "day": 6,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 5.0,          # Triggers dht_temp outside 7-25
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Low Output Temp Anomaly",
+                    "status": "Current",
+                    "confidence_score": 92,
+                    "root_cause": "Supply air output temperature (5.0 °C) is outside the safe operating range of 7–25 °C.",
+                    "severity": "High",
+                    "recommended_action": "Inspect evaporator for frost buildup, verify fan operation."
                 }
             ]
         }
@@ -288,7 +408,7 @@ ANOMALOUS_AC_TEMPLATES = [
         }
     },
     {
-        "fault": "Outlet Compressor Temp Anomaly",
+        "fault": "High Outlet Temperature",
         "ac_unit": "AC3",
         "day": 14,
         "base_telemetry": {
@@ -307,7 +427,7 @@ ANOMALOUS_AC_TEMPLATES = [
         "ai_diagnoses": {
             "diagnoses": [
                 {
-                    "issue": "Outlet Compressor Temp Anomaly",
+                    "issue": "High Outlet Temperature (Discharge) — Dirty condenser coil",
                     "status": "Current",
                     "confidence_score": 93,
                     "root_cause": "Outlet compressor discharge line temperature (74.5 °C) is outside the safe operating range of 50–70 °C.",
@@ -318,7 +438,37 @@ ANOMALOUS_AC_TEMPLATES = [
         }
     },
     {
-        "fault": "Inlet Compressor Temp Anomaly",
+        "fault": "Low Outlet Temperature",
+        "ac_unit": "AC3",
+        "day": 14,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 44.5,     # Triggers ds18b20_temp1 outside 50-70
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Low Outlet Temperature (Discharge) — Low refrigerant charge",
+                    "status": "Current",
+                    "confidence_score": 93,
+                    "root_cause": "Outlet compressor discharge line temperature (44.5 °C) is outside the safe operating range of 50–70 °C.",
+                    "severity": "High",
+                    "recommended_action": "Check compressor operation and verify system refrigerant level."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "High Inlet Temperature",
         "ac_unit": "AC3",
         "day": 14,
         "base_telemetry": {
@@ -337,12 +487,162 @@ ANOMALOUS_AC_TEMPLATES = [
         "ai_diagnoses": {
             "diagnoses": [
                 {
-                    "issue": "Inlet Compressor Temp Anomaly",
+                    "issue": "High Inlet Temperature (Suction) — Dirty evaporator coil",
                     "status": "Current",
                     "confidence_score": 93,
                     "root_cause": "Inlet compressor suction line temperature (19.5 °C) is outside the safe operating range of 8–17 °C.",
                     "severity": "High",
                     "recommended_action": "Inspect suction line insulation, check expansion valve operation, and verify refrigerant charge."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "Low Inlet Temperature",
+        "ac_unit": "AC3",
+        "day": 14,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 5.5,     # Triggers ds18b20_temp2 outside 8-17
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Low Inlet Temperature (Suction) — faulty thermostat",
+                    "status": "Current",
+                    "confidence_score": 93,
+                    "root_cause": "Inlet compressor suction line temperature (5.5 °C) is outside the safe operating range of 8–17 °C.",
+                    "severity": "High",
+                    "recommended_action": "Inspect suction line insulation, check expansion valve operation, and verify refrigerant charge."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "Low Vibration",
+        "ac_unit": "AC4",
+        "day": 9,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 5.0,         # Triggers vibration < 10
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Low Vibration — Compressor not operating, fan not running or off",
+                    "status": "Current",
+                    "confidence_score": 95,
+                    "root_cause": "Vibration frequency is abnormally low, suggesting the unit is not running or operating.",
+                    "severity": "High",
+                    "recommended_action": "Verify power supply to compressor and fan; check starter capacitors and contactors."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "Excessive Vibration",
+        "ac_unit": "AC4",
+        "day": 9,
+        "base_telemetry": {
+            "dust_sensor": 45.0,
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 92.0,         # Triggers vibration >= 90
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Excessive Vibration — Loose compressor mounting, worn bearings, condenser fan imbalance",
+                    "status": "Current",
+                    "confidence_score": 93,
+                    "root_cause": "Vibration frequency exceeds the safety threshold of 90 Hz.",
+                    "severity": "Medium",
+                    "recommended_action": "Inspect the compressor mounting, internal components, and check for signs of compressor wear or mechanical looseness."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "Low Dust Sensor",
+        "ac_unit": "AC4",
+        "day": 9,
+        "base_telemetry": {
+            "dust_sensor": 0.0,         # Triggers dust <= 0.001
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Low Dust Sensor — Clean air path, recently cleaned filter, or possible dust sensor malfunction if consistently zero",
+                    "status": "Current",
+                    "confidence_score": 92,
+                    "root_cause": "Dust concentration reading is exactly zero, which may indicate a recently cleaned filter or a sensor malfunction.",
+                    "severity": "Low",
+                    "recommended_action": "Check dust sensor calibration and verify clean air path."
+                }
+            ]
+        }
+    },
+    {
+        "fault": "Excessive Dust Sensor",
+        "ac_unit": "AC4",
+        "day": 9,
+        "base_telemetry": {
+            "dust_sensor": 355.0,         # Triggers dust >= 340
+            "dht_temp": 18.0,
+            "dht_humidity": 55.0,
+            "vibration": 45.0,
+            "ds18b20_temp1": 55.0,
+            "ds18b20_temp2": 12.0,
+            "pzem_voltage": 228.0,
+            "pzem_current": 8.0,
+            "pzem_power": 1750.0,
+            "pzem_frequency": 60.0,
+            "pzem_power_factor": 0.88,
+        },
+        "ai_diagnoses": {
+            "diagnoses": [
+                {
+                    "issue": "Excessive Dust Sensor — Dirty air filter",
+                    "status": "Current",
+                    "confidence_score": 93,
+                    "root_cause": "Dust concentration exceeds the safe threshold of 340 µg/m³.",
+                    "severity": "Low",
+                    "recommended_action": "Clean the air filter and inspect the evaporator section for dust accumulation that may restrict airflow."
                 }
             ]
         }
@@ -374,8 +674,8 @@ def seed_alerts():
             
             # Voltage
             tel["pzem_voltage"] = tel["pzem_voltage"] + random.uniform(-1.0, 1.0)
-            if tmpl["base_telemetry"]["pzem_voltage"] > 231.0:
-                tel["pzem_voltage"] = max(tel["pzem_voltage"], 231.1)
+            if tmpl["base_telemetry"]["pzem_voltage"] > 241.0:
+                tel["pzem_voltage"] = max(tel["pzem_voltage"], 241.1)
             elif tmpl["base_telemetry"]["pzem_voltage"] < 225.0:
                 tel["pzem_voltage"] = min(tel["pzem_voltage"], 224.9)
             tel["pzem_voltage"] = round(tel["pzem_voltage"], 1)
