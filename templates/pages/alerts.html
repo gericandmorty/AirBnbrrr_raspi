@@ -78,10 +78,6 @@
             <i data-lucide="bell-ring" class="text-rose-600 w-6 h-6"></i>
           </div>
           System Alerts
-          <span id="raspi-status-badge" class="text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-1.5 ml-2">
-            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
-            Checking Status...
-          </span>
         </h1>
         <p class="text-slate-500 mt-2 text-sm sm:text-base ml-1">
           Anomalies detected by the system monitoring service.
@@ -718,8 +714,10 @@
         const response = await fetch('/telemetry/latest');
         if (!response.ok) {
           // No telemetry available
-          badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-1.5 ml-2";
-          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span> Raspi Offline`;
+          if (badge) {
+            badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-1.5 ml-2";
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span> Raspi Offline`;
+          }
           
           if (emptyTitle) emptyTitle.textContent = "Status Unknown (Raspi Offline)";
           if (emptyDesc) emptyDesc.textContent = "No active alerts, but the Raspberry Pi is currently offline and has not sent any telemetry data.";
@@ -734,8 +732,10 @@
         const data = await response.json();
         const tsStr = data.timestamp; // 'YYYY-MM-DD HH:MM:SS'
         if (!tsStr) {
-          badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-1.5 ml-2";
-          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span> Raspi Status Unknown`;
+          if (badge) {
+            badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-1.5 ml-2";
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span> Raspi Status Unknown`;
+          }
           
           if (emptyTitle) emptyTitle.textContent = "Status Unknown";
           if (emptyDesc) emptyDesc.textContent = "Unable to determine Raspberry Pi active status.";
@@ -753,8 +753,10 @@
           // Raspi is ON!
           if (alertsCount === 0) {
             // Healthy!
-            badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 ml-2";
-            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Raspi ON: Good condition`;
+            if (badge) {
+              badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 ml-2";
+              badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Raspi ON: Good condition`;
+            }
             
             if (emptyTitle) emptyTitle.textContent = "All Clear — Good condition";
             if (emptyDesc) emptyDesc.textContent = "The Raspberry Pi is ON and monitoring actively. No anomalies have been detected in the last 2 hours.";
@@ -764,13 +766,17 @@
             }
           } else {
             // Anomaly present
-            badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1.5 ml-2";
-            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span> Raspi ON: Anomaly Detected`;
+            if (badge) {
+              badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1.5 ml-2";
+              badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span> Raspi ON: Anomaly Detected`;
+            }
           }
         } else {
           // Raspi is OFF/Offline (> 30 mins)
-          badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1.5 ml-2";
-          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Raspi Offline`;
+          if (badge) {
+            badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1.5 ml-2";
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Raspi Offline`;
+          }
           
           if (emptyTitle) emptyTitle.textContent = "Status Unknown (Raspi Offline)";
           if (emptyDesc) emptyDesc.textContent = "No active alerts in log, but the Raspberry Pi has not sent any telemetry data in the last 30 minutes.";
@@ -781,8 +787,10 @@
         }
       } catch (err) {
         console.error("Error checking health status:", err);
-        badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-1.5 ml-2";
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span> Raspi Offline`;
+        if (badge) {
+          badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-1.5 ml-2";
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span> Raspi Offline`;
+        }
       }
       
       if (window.lucide) window.lucide.createIcons();

@@ -158,10 +158,6 @@
                         <i data-lucide="list" class="w-4 h-4 text-slate-500"></i>
                         Data Logs
                     </h3>
-                    <div id="unit-status-container" class="hidden flex items-center gap-2">
-                        <span class="text-slate-300">|</span>
-                        <span id="unit-status-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"></span>
-                    </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <select id="date-filter" class="text-xs font-semibold bg-slate-50 text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-200 cursor-pointer">
@@ -483,29 +479,7 @@
           });
       }
 
-      const unitStatuses = {
-          '': { label: 'All Units', class: 'hidden' },
-          'AC1': { label: 'Good condition', class: 'bg-emerald-50 text-emerald-700 border border-emerald-100' },
-          'AC2': { label: 'Good condition', class: 'bg-emerald-50 text-emerald-700 border border-emerald-100' },
-          'AC3': { label: 'Anomaly: Compressor Overheating', class: 'bg-rose-50 text-rose-700 border border-rose-100' },
-          'AC4': { label: 'Anomaly: Excessive Compressor Vibration and Dust Accumulation', class: 'bg-rose-50 text-rose-700 border border-rose-100' },
-          'AC5': { label: 'Anomaly: Reduced Cooling Performance', class: 'bg-rose-50 text-rose-700 border border-rose-100' },
-          'AC6': { label: 'Good condition', class: 'bg-emerald-50 text-emerald-700 border border-emerald-100' }
-      };
 
-      function updateUnitStatusUI() {
-          const container = document.getElementById('unit-status-container');
-          const badge = document.getElementById('unit-status-badge');
-          const status = unitStatuses[activeAC];
-          
-          if (!status || status.class === 'hidden') {
-              container.classList.add('hidden');
-          } else {
-              container.classList.remove('hidden');
-              badge.textContent = status.label;
-              badge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${status.class}`;
-          }
-      }
 
       // Handle Segmented Button Clicks
       document.querySelectorAll('.ac-toggle-btn').forEach(btn => {
@@ -527,7 +501,6 @@
               activeAC = btn.getAttribute('data-ac');
               localStorage.setItem('data_gathered_active_ac', activeAC);
               document.getElementById('date-filter').value = 'all';
-              updateUnitStatusUI();
               loadLogs();
           });
       });
@@ -719,7 +692,6 @@
       });
 
       loadGatheringConfig();
-      updateUnitStatusUI();
       loadLogs();
   </script>
 </body>
