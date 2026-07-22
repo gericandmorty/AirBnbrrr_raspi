@@ -20,7 +20,7 @@ def is_overheating(tel):
 def is_reduced_cooling(tel):
     try:
         return (
-            tel.get("ds18b20_temp1") is not None and float(tel.get("ds18b20_temp1")) >= 64.0 and
+            tel.get("ds18b20_temp1") is not None and float(tel.get("ds18b20_temp1")) >= 61.0 and
             tel.get("dht_temp") is not None and float(tel.get("dht_temp")) >= 21.0 and
             tel.get("ds18b20_temp2") is not None and float(tel.get("ds18b20_temp2")) >= 22.0
         )
@@ -125,13 +125,13 @@ RULES = [
     {
         "id": "reduced_cooling",
         "label": "Reduced Cooling Performance",
-        "description": "Deterministic check: Outlet Compressor >= 64°C AND Output Air >= 21°C AND Inlet >= 22°C",
+        "description": "Deterministic check: Outlet Compressor >= 61°C AND Output Air >= 21°C AND Inlet >= 22°C",
         "check": is_reduced_cooling,
         "issue": "Reduced Cooling Performance",
         "severity": "Medium",
         "root_cause": "The monitored temperatures indicate a reduction in cooling performance. Inspect the refrigerant system for possible refrigerant leakage or insufficient refrigerant charge.",
         "recommended_action": "The monitored temperatures indicate a reduction in cooling performance. Inspect the refrigerant system for possible refrigerant leakage or insufficient refrigerant charge. Verify the condition using appropriate refrigeration service equipment and perform corrective maintenance if necessary.",
-        "normal_range": "Outlet < 64°C OR Output < 21°C OR Inlet < 22°C",
+        "normal_range": "Outlet < 61°C OR Output < 21°C OR Inlet < 22°C",
         "measured_val_func": lambda tel: f"Outlet: {tel.get('ds18b20_temp1')}°C, Output: {tel.get('dht_temp')}°C, Inlet: {tel.get('ds18b20_temp2')}°C",
         "unit": "°C"
     },
@@ -192,13 +192,13 @@ RULES = [
     {
         "id": "high_outlet_temp",
         "label": "High Outlet Compressor Temp",
-        "description": "Outlet compressor discharge temp check (> 70 °C)",
-        "check": lambda tel: tel.get("ds18b20_temp1") is not None and float(tel.get("ds18b20_temp1")) > 70.0 and not is_reduced_cooling(tel),
+        "description": "Outlet compressor discharge temp check (> 61 °C)",
+        "check": lambda tel: tel.get("ds18b20_temp1") is not None and float(tel.get("ds18b20_temp1")) > 61.0 and not is_reduced_cooling(tel),
         "issue": "High Outlet Temperature (Discharge) — Dirty condenser coil",
         "severity": "High",
-        "root_cause": "Outlet compressor discharge line temperature is above the safe operating limit of 70 °C.",
+        "root_cause": "Outlet compressor discharge line temperature is above the safe operating limit of 61 °C.",
         "recommended_action": "Check whether the condenser fan is operating properly. Stop operating the air conditioner if the current continues to increase to prevent compressor damage and protect the electrical wiring and circuit breaker.",
-        "normal_range": "≤ 70.0 °C",
+        "normal_range": "≤ 61.0 °C",
         "measured_val_func": lambda tel: f"{tel.get('ds18b20_temp1')} °C",
         "unit": "°C"
     },
