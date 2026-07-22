@@ -78,11 +78,9 @@ SYSTEM SPECIFICATIONS:
 - Refrigerant: R410A
 - Expected Watts: 1650W - 1860W
 - Expected Current: 7.6A - 8.8A
-- Voltage/Frequency: 225-231V / 60Hz / 1Ph
-
-SENSOR CONTEXT & PLACEMENT:
+- Voltage/Frequency: 225-241V / 60Hz / 1Ph
 - Return Air (AC Output Temp/Humidity): Measures room/supply air. Expected normal range is 7-25 °C and humidity <= 80%.
-- Compressor Vibration: Mounted on the compressor. Expected normal range is less than 95 Hz. Vibration >= 95 Hz indicates mechanical wear or loose mounts.
+- Compressor Vibration: Mounted on the compressor. Expected normal range is less than 90 Hz. Vibration >= 90 Hz indicates mechanical wear, loose mounts, or severe compressor overload.
 - Discharge Line Temp (Outlet Compressor Temp): Leaving the compressor. Expected normal range is 50-70 °C. Abnormally high temps suggest a dirty condenser coil or low refrigerant.
 - Suction Line Temp (Inlet Compressor Temp): Leaving the indoor coil. Expected normal range is 8-17 °C. Temperatures < 8 °C suggest evaporator freezing risk.
 - Dust Sensor: Located behind the front filter. Expected normal range is 0-340 µg/m³. Dust > 340 µg/m³ indicates a dirty filter.

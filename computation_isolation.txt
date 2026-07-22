@@ -1,0 +1,89 @@
+# Isolation Forest Mathematical & Algorithmic Computation Guide
+
+This document presents the exact mathematical formulas, algorithmic steps, and computational logic used by the **Isolation Forest** anomaly detection model in AirBnBrrr.
+
+---
+
+## 1. Core Mathematical Formulation
+
+The Isolation Forest algorithm evaluates anomalies based on the principle that **anomalies are rare and structurally distinct**, making them significantly easier to isolate through random recursive partitioning.
+
+### Step 1: Isolation Tree (iTree) Construction
+Given a training dataset $X = \{x_1, x_2, \dots, x_n\}$ containing $n$ observations in a $d$-dimensional space (in AirBnBrrr, $d = 12$ sensor features):
+
+1. At each internal node $k$, a sensor feature $j \in \{1, \dots, d\}$ is randomly selected.
+2. A split value $p$ is randomly drawn from a uniform distribution between the minimum and maximum observed values of feature $j$:
+   $$p \sim \text{Uniform}(\min X_{\cdot, j}, \max X_{\cdot, j})$$
+3. The dataset at node $k$ is split into left and right sub-nodes:
+   $$X_L = \{x \in X \mid x_j < p\}, \quad X_R = \{x \in X \mid x_j \ge p\}$$
+4. Recursion continues until one of the termination criteria is met:
+   - Node depth reaches the maximum height limit: $h_{\max} = \lceil \log_2(n) \rceil$
+   - $|X| \le 1$
+   - All observations in $X$ have identical feature values.
+
+---
+
+### Step 2: Traversal Path Length $h(x)$
+For a given observation $x$, its path length $h(x)$ in an isolation tree is defined as the number of edges $x$ traverses from the root node to an isolating leaf node.
+
+If tree traversal terminates at an uncompleted leaf node at depth $e$ with $|X| > 1$ remaining observations, an average path adjustment $c(|X|)$ is added:
+$$h(x) = e + c(|X|)$$
+
+---
+
+### Step 3: Normalizing Constant $c(n)$
+Because an Isolation Tree has the equivalent structure of a **Binary Search Tree (BST)**, the average path length of an unsuccessful search in a BST built on $n$ instances is used as the normalizing factor $c(n)$:
+
+$$c(n) = 2 \ln(n - 1) + 2\gamma - \frac{2(n - 1)}{n}$$
+
+Where:
+- $\gamma = 0.5772156649 \dots$ (Euler-Mascheroni Constant)
+- $n$ is the total number of training observations.
+
+---
+
+### Step 4: Anomaly Score $s(x, n)$ Computation
+Across an ensemble forest of $t$ trees (default $t = 100$), the expected path length $E(h(x))$ is computed by averaging path lengths across all trees:
+
+$$E(h(x)) = \frac{1}{t} \sum_{i=1}^{t} h_i(x)$$
+
+The final anomaly score $s(x, n)$ for observation $x$ is defined as:
+
+$$s(x, n) = 2^{-\frac{E(h(x))}{c(n)}}$$
+
+#### Score Interpretation:
+1. **$s(x, n) \to 1.0$**: $E(h(x)) \to 0$ (very short path length $\Rightarrow$ **High Anomaly Probability**).
+2. **$s(x, n) < 0.5$**: $E(h(x)) \to c(n)$ (long path length $\Rightarrow$ **Normal Observation**).
+3. **$s(x, n) \approx 0.5$**: Entire dataset has uniform path length $\Rightarrow$ No distinct anomalies.
+
+---
+
+### Step 5: Contamination Threshold & Decision Boundary
+Scikit-learn fits a decision threshold $\tau$ based on the user-specified **contamination factor** $\alpha$ (default $\alpha = 0.05$ or 5%):
+
+1. Raw decision scores are shifted so normal regions yield positive scores and anomalies yield negative scores:
+   $$\text{Score}_{\text{sklearn}}(x) = c(n) - E(h(x)) - \text{offset}$$
+2. The classification rule is applied:
+   $$\text{Prediction}(x) = \begin{cases} -1 & \text{if } s(x, n) \ge \tau \quad \text{(Flagged Anomaly)} \\ +1 & \text{if } s(x, n) < \tau \quad \text{(Normal Instance)} \end{cases}$$
+
+---
+
+## 2. AirBnBrrr Feature Preprocessing & PCA Computation
+
+In [services/isolation_forest.py](file:///home/gericandmorty/Desktop/Clients/Airbnbrrr/main/raspi/services/isolation_forest.py), the 12 sensor readings are preprocessed before model training and 2D scatter plot projection.
+
+### Step 1: Feature Vector Construction
+For each telemetry record $x$, the 12-dimensional vector is constructed:
+$$X = [x_{\text{dust}}, x_{\text{dht\_temp}}, x_{\text{dht\_hum}}, x_{\text{vib}}, x_{\text{temp1}}, x_{\text{temp2}}, x_{\text{volt}}, x_{\text{curr}}, x_{\text{power}}, x_{\text{energy}}, x_{\text{freq}}, x_{\text{pf}}]$$
+
+### Step 2: Mean Imputation & Standard Scaling
+1. Missing values ($NaN$) are replaced with training means: $\mu_j = \frac{1}{n} \sum_{i=1}^n x_{i, j}$.
+2. Features are z-score standardized:
+   $$z_j = \frac{x_j - \mu_j}{\sigma_j}$$
+
+### Step 3: 2D Principal Component Analysis (PCA) Projection
+To visualize the 12D decision boundaries on a 2D scatter chart, PCA computes the covariance matrix $\Sigma = \frac{1}{n} Z^T Z$ and extracts the two leading eigenvectors $w_1, w_2 \in \mathbb{R}^{12}$:
+
+$$PC_1 = Z \cdot w_1, \quad PC_2 = Z \cdot w_2$$
+
+The resulting coordinates $(PC_1, PC_2)$ form the 2D scatter plot points $(x, y)$ rendered on the real-time visualizer page.
