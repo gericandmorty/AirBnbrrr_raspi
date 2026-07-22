@@ -673,3 +673,12 @@ def shutdown_system():
 	threading.Thread(target=_delayed_shutdown, daemon=True).start()
 	return {"status": "accepted", "message": "Shutdown command sent."}
 
+
+@app.get("/api/isolation_forest/scatter")
+def get_isolation_forest_scatter(ac_unit: Optional[str] = None, limit: int = 500):
+	try:
+		return service.get_scatter_data(ac_unit=ac_unit, limit=limit)
+	except Exception as e:
+		return {"error": str(e), "points": [], "stats": {"total": 0, "regular": 0, "abnormal": 0, "contamination": 0.05}}
+
+
